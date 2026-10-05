@@ -195,6 +195,24 @@ int main(void)
         assert(b.samples[199]==32768);
     }
 
+    /* ATF CRS/affine metadata round trip, including rotation terms. */
+    {
+        ATTerrain g={0},r={0};
+        assert(at_terrain_init(&g,2,2)==0);
+        g.samples[0]=1; g.samples[1]=2; g.samples[2]=3; g.samples[3]=4;
+        g.geo.valid=1; g.geo.elevation_scale=1.0;
+        g.geo.crs_type=AT_CRS_PROJECTED; g.geo.coordinate_units=AT_COORD_UNITS_METERS; g.geo.epsg=32632;
+        g.geo.transform[0]=500000.0; g.geo.transform[1]=10.0; g.geo.transform[2]=0.25;
+        g.geo.transform[3]=6500000.0; g.geo.transform[4]=-0.5; g.geo.transform[5]=-10.0;
+        assert(at_write_atf("test-crs.atf",&g)==0);
+        assert(at_read_atf("test-crs.atf",&r)==0);
+        assert(r.geo.valid && r.geo.crs_type==AT_CRS_PROJECTED);
+        assert(r.geo.coordinate_units==AT_COORD_UNITS_METERS && r.geo.epsg==32632);
+        assert(r.geo.transform[0]==500000.0 && r.geo.transform[1]==10.0 && r.geo.transform[2]==0.25);
+        assert(r.geo.transform[3]==6500000.0 && r.geo.transform[4]==-0.5 && r.geo.transform[5]==-10.0);
+        at_terrain_free(&g); at_terrain_free(&r);
+    }
+
     /* Geo metadata survives ATF and WCS 1.02 round trips. */
     at_terrain_free(&b);
     a.geo.valid=1; a.geo.origin_lat=58.0; a.geo.origin_lon=7.0;
@@ -209,7 +227,7 @@ int main(void)
     assert(b.geo.valid && b.geo.origin_lat==58.0 && b.geo.step_lon==0.02);
 
     at_terrain_free(&a); at_terrain_free(&b);
-    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem"); remove("test.dted"); remove("test-usgs.dem"); remove("test-usgs-long.dem");
+    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem"); remove("test.dted"); remove("test-usgs.dem"); remove("test-usgs-long.dem"); remove("test-crs.atf");
     puts("core tests: PASS");
     return 0;
 }
