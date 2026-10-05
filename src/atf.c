@@ -84,7 +84,7 @@ int at_read_atf(const char *path, ATTerrain *t)
     FILE *f;
     char id[4], type[4];
     uint32_t form_size, size, width=0, height=0;
-    int have_head=0, have_size=0, have_hmap=0;
+    int have_head=0, have_size=0, have_hmap=0, have_geo=0;\n    ATGeoMetadata geo={0};
     if (!path || !t) return -1;
     f=fopen(path,"rb");
     if (!f) return -1;
@@ -122,7 +122,7 @@ int at_read_atf(const char *path, ATTerrain *t)
             for (i=0;i<n;++i) if (get_u16(f,&t->samples[i])) {
                 at_terrain_free(t); fclose(f); return -1;
             }
-            have_hmap=1;
+            if (have_geo) t->geo=geo;\n            have_hmap=1;
         }
         if (fseek(f,pos+(long)size+(long)(size&1U),SEEK_SET)!=0) {
             if (have_hmap && t->samples) at_terrain_free(t);
