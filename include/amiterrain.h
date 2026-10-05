@@ -33,6 +33,9 @@ typedef struct {
     ATCRSType crs_type;
     ATCoordinateUnits coordinate_units;
     int32_t epsg;
+    int32_t projection_system; /* source format code when known, else 0 */
+    int32_t projection_zone;   /* source zone when known, else 0 */
+    int32_t horizontal_datum;  /* source datum code when known, else 0 */
     double transform[6];
 } ATGeoMetadata;
 
