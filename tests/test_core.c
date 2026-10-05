@@ -115,6 +115,10 @@ int main(void)
         unsigned int col,row;
         assert(df!=NULL);
         memcpy(uhl,"UHL1",4);
+        memcpy(uhl+4,"0070000E",8);  /* 7E */
+        memcpy(uhl+12,"580000N",7);  /* 58N */
+        memcpy(uhl+20,"0360",4);     /* 36.0 arcsec = 0.01 degree */
+        memcpy(uhl+24,"0360",4);
         memcpy(uhl+47,"0002",4); memcpy(uhl+51,"0003",4);
         assert(fwrite(uhl,1,80,df)==80);
         assert(fwrite(zeros,1,sizeof(zeros),df)==sizeof(zeros));
@@ -133,6 +137,11 @@ int main(void)
         at_terrain_free(&b);
         assert(at_read_dted("test.dted",&b)==0);
         assert(b.width==2 && b.height==3);
+        assert(b.geo.valid);
+        assert(b.geo.origin_lon==7.0);
+        assert(b.geo.origin_lat>58.019999 && b.geo.origin_lat<58.020001);
+        assert(b.geo.step_lon>0.009999 && b.geo.step_lon<0.010001);
+        assert(b.geo.step_lat< -0.009999 && b.geo.step_lat> -0.010001);
         assert(b.samples[0]==(uint16_t)(34+32768));
         assert(b.samples[1]==(uint16_t)(300+32768));
         assert(b.samples[4]==(uint16_t)(-12+32768));
