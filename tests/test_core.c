@@ -224,12 +224,14 @@ int main(void)
         g.samples[0]=1; g.samples[1]=2; g.samples[2]=3; g.samples[3]=4;
         g.geo.valid=1; g.geo.elevation_scale=1.0;
         g.geo.crs_type=AT_CRS_PROJECTED; g.geo.coordinate_units=AT_COORD_UNITS_METERS; g.geo.epsg=32632;
+        g.geo.projection_system=1; g.geo.projection_zone=32; g.geo.horizontal_datum=4;
         g.geo.transform[0]=500000.0; g.geo.transform[1]=10.0; g.geo.transform[2]=0.25;
         g.geo.transform[3]=6500000.0; g.geo.transform[4]=-0.5; g.geo.transform[5]=-10.0;
         assert(at_write_atf("test-crs.atf",&g)==0);
         assert(at_read_atf("test-crs.atf",&r)==0);
         assert(r.geo.valid && r.geo.crs_type==AT_CRS_PROJECTED);
         assert(r.geo.coordinate_units==AT_COORD_UNITS_METERS && r.geo.epsg==32632);
+        assert(r.geo.projection_system==1 && r.geo.projection_zone==32 && r.geo.horizontal_datum==4);
         assert(r.geo.transform[0]==500000.0 && r.geo.transform[1]==10.0 && r.geo.transform[2]==0.25);
         assert(r.geo.transform[3]==6500000.0 && r.geo.transform[4]==-0.5 && r.geo.transform[5]==-10.0);
         at_terrain_free(&g); at_terrain_free(&r);
