@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 int main(void)
 {
@@ -57,6 +58,38 @@ int main(void)
             assert(b.samples[i]==(uint16_t)((int32_t)vals[i]+32768));
     }
 
+
+    /* Synthetic native VistaPro DEM: 258 rows, literal ByteRun1 stream.
+       First source row is south and must become AmiTerrain's last row. */
+    {
+        FILE *vf=fopen("test-vistapro-native.dem","wb");
+        unsigned char hdr[2048]={0}; size_t row,x;
+        assert(vf!=NULL);
+        memcpy(hdr,"Vista DEM File",14);
+        hdr[131]=1; /* compression != 0 */
+        hdr[138]=1; hdr[139]=2; /* 258 BE */
+        hdr[142]=1; hdr[143]=2;
+        assert(fwrite(hdr,1,sizeof(hdr),vf)==sizeof(hdr));
+        for(row=0;row<258;++row) {
+            unsigned char raw[259], packed[262]; size_t p=0;
+            int16_t base=(int16_t)(100+(int)row);
+            raw[0]=(unsigned char)(((uint16_t)base)>>8); raw[1]=(unsigned char)base;
+            for(x=2;x<259;++x) raw[x]=1; /* monotonic deltas */
+            packed[p++]=127; memcpy(packed+p,raw,128); p+=128;
+            packed[p++]=127; memcpy(packed+p,raw+128,128); p+=128;
+            packed[p++]=2; memcpy(packed+p,raw+256,3); p+=3;
+            assert(fputc((int)(p>>8),vf)!=EOF); assert(fputc((int)(p&255),vf)!=EOF);
+            assert(fwrite(packed,1,p,vf)==p);
+        }
+        assert(fclose(vf)==0);
+        at_terrain_free(&b);
+        assert(at_read_vistapro_dem("test-vistapro-native.dem",&b)==0);
+        assert(b.width==258 && b.height==258);
+        assert(b.samples[(257U*258U)]==(uint16_t)(100+32768));
+        assert(b.samples[0]==(uint16_t)(357+32768));
+        assert(b.samples[257]==(uint16_t)(357+257+32768));
+    }
+
     /* Geo metadata survives ATF and WCS 1.02 round trips. */
     at_terrain_free(&b);
     a.geo.valid=1; a.geo.origin_lat=58.0; a.geo.origin_lon=7.0;
@@ -71,7 +104,7 @@ int main(void)
     assert(b.geo.valid && b.geo.origin_lat==58.0 && b.geo.step_lon==0.02);
 
     at_terrain_free(&a); at_terrain_free(&b);
-    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev");
+    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem");
     puts("core tests: PASS");
     return 0;
 }
