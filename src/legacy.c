@@ -273,6 +273,16 @@ int at_read_dted(const char *path, ATTerrain *t)
         stored=((uint32_t)sum[0]<<24)|((uint32_t)sum[1]<<16)|((uint32_t)sum[2]<<8)|sum[3];
         if(checksum!=stored) goto fail;
     }
+    /* ground_units==3 denotes arc-seconds in classic USGS DEM. Profile X/Y
+       are then geographic coordinates in arc-seconds; convert to degrees. */
+    if(ground_units==3 && dx>0.0 && dy>0.0) {
+        t->geo.valid=1;
+        t->geo.origin_lon=first_x/3600.0;
+        t->geo.origin_lat=(first_y+(double)(t->height-1U)*dy)/3600.0;
+        t->geo.step_lon=dx/3600.0;
+        t->geo.step_lat=-dy/3600.0;
+        t->geo.elevation_scale=1.0;
+    }
     fclose(f); return 0;
 fail:
     at_terrain_free(t); fclose(f); return -1;
@@ -295,9 +305,14 @@ static int at_usgs_d24(const char *p, double *v)
 }
 int at_read_usgs_dem(const char *path, ATTerrain *t)
 {
-    FILE *f; char a[1024],bh[144],field[7]; long rows,cols,pr,pc,n,one; uint32_t x,y; double x0,y0,z0;
+    FILE *f; char a[1024],bh[144],field[7]; long rows,cols,pr,pc,n,one,ground_units; uint32_t x,y; double x0,y0,z0,dx,dy,first_x=0.0,first_y=0.0;
     if(!path||!t) return -1; f=fopen(path,"rb"); if(!f) return -1;
     if(fread(a,1,1024,f)!=1024) { fclose(f); return -1; }
+    /* A-record ground reference system is at 156; units/resolution are later.
+       Only geographic arc-second DEMs are mapped to ATGeoMetadata lat/lon. */
+    if(at_usgs_i6(a+528,&ground_units)) ground_units=0;
+    if(at_usgs_d24(a+816,&dx)) dx=0.0;
+    if(at_usgs_d24(a+840,&dy)) dy=0.0;
     /* A-record elements 21/22: rows of profiles (normally 1), columns of profiles. */
     if(at_usgs_i6(a+852,&rows)||at_usgs_i6(a+858,&cols)||rows!=1||cols<=0) { fclose(f); return -1; }
     /* Read first B header to discover the rectangular profile height. */
@@ -311,7 +326,7 @@ int at_read_usgs_dem(const char *path, ATTerrain *t)
                n!=(long)t->height||one!=1) goto fail;
         }
         if(at_usgs_d24(bh+24,&x0)||at_usgs_d24(bh+48,&y0)||at_usgs_d24(bh+72,&z0)) goto fail;
-        (void)x0; (void)y0;
+        if(x==0) { first_x=x0; first_y=y0; }
         for(y=0;y<t->height;++y) {
             long ev; int32_t elev;
             if(fread(field,1,6,f)!=6) goto fail; field[6]=0;
