@@ -13,9 +13,13 @@ jobs:
         run: make
       - name: Test
         run: make test
-      - name: Smoke test CLI
+      - name: Smoke test CLI and ATF
         run: |
           ./amiterrain generate 64 64 6502 terrain.pgm
           ./amiterrain validate terrain.pgm
-          ./amiterrain convert terrain.pgm terrain.raw
+          ./amiterrain convert terrain.pgm terrain.atf
+          ./amiterrain validate terrain.atf
+          ./amiterrain convert terrain.atf roundtrip.pgm
+          ./amiterrain convert terrain.atf terrain.raw
           test "$(stat -c%s terrain.raw)" = "8192"
+          test "$(./amiterrain info terrain.pgm | sed 's/.*checksum=//')" = "$(./amiterrain info terrain.atf | sed 's/.*checksum=//')"
