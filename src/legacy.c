@@ -253,18 +253,25 @@ int at_read_dted(const char *path, ATTerrain *t)
         }
     }
     for(col=0;col<w;++col) {
-        uint32_t lon;
+        uint32_t lon, checksum=0, stored; size_t k;
         if(fread(head,1,8,f)!=8 || head[0]!=0xaa) goto fail;
         lon=((uint32_t)head[4]<<8)|head[5];
         if(lon!=col) goto fail;
+        for(k=0;k<8;++k) checksum+=head[k];
         for(y=0;y<h;++y) {
             uint16_t raw,mag; int32_t elev;
             if(fread(eb,1,2,f)!=2) goto fail;
+            checksum+=(uint32_t)eb[0]+(uint32_t)eb[1];
             raw=(uint16_t)(((uint16_t)eb[0]<<8)|eb[1]); mag=(uint16_t)(raw&0x7fffU);
             elev=(raw&0x8000U)?-(int32_t)mag:(int32_t)mag;
-            t->samples[(size_t)(h-1U-y)*w+col]=(uint16_t)(elev+32768);
+            /* DTED void is signed-magnitude -32767. Canonical uint16 value 0
+               is reserved here for missing elevation; -32768 is not representable
+               by DTED signed magnitude and therefore remains unambiguous. */
+            t->samples[(size_t)(h-1U-y)*w+col]=(raw==0xffffU)?0U:(uint16_t)(elev+32768);
         }
         if(fread(sum,1,4,f)!=4) goto fail;
+        stored=((uint32_t)sum[0]<<24)|((uint32_t)sum[1]<<16)|((uint32_t)sum[2]<<8)|sum[3];
+        if(checksum!=stored) goto fail;
     }
     fclose(f); return 0;
 fail:
