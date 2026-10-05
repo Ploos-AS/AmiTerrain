@@ -21,5 +21,7 @@ int at_write_raw16be(const char *path, const ATTerrain *terrain);
 int at_read_raw16be(const char *path, uint32_t width, uint32_t height, ATTerrain *terrain);
 int at_write_atf(const char *path, const ATTerrain *terrain);
 int at_read_atf(const char *path, ATTerrain *terrain);
+int at_read_vistapro_binary(const char *path, uint32_t width, uint32_t height, ATTerrain *terrain);
+int at_write_vistapro_binary(const char *path, const ATTerrain *terrain);
 
 #endif
