@@ -45,9 +45,9 @@ META CRS  BBOX TILE MATL BIOM WATR VEGT CAMR LITE ANIM
 The core heightfield must remain usable without scene or GIS metadata. Compression, if introduced, will be optional rather than changing the meaning of HMAP.
 
 
-### `CRS ` — 64 bytes, optional
+### `CRS ` — 64 or 76 bytes, optional
 
-Generic spatial metadata extension. Older readers may safely ignore this chunk.
+Generic spatial metadata extension. Older readers may safely ignore this chunk. Readers supporting the original 64-byte form must also accept the 76-byte extension and ignore trailing fields they do not understand.
 
 | Offset | Type | Meaning |
 | --- | --- | --- |
@@ -56,6 +56,9 @@ Generic spatial metadata extension. Older readers may safely ignore this chunk.
 | 8 | u32 | EPSG code, 0 when unknown |
 | 12 | u32 | reserved, zero |
 | 16 | 6 × f64 | affine transform |
+| 64 | i32 | source projection-system code, 0 if unknown (76-byte form) |
+| 68 | i32 | source projection-zone code, 0 if unknown (76-byte form) |
+| 72 | i32 | source horizontal-datum code, 0 if unknown (76-byte form) |
 
 The affine transform maps raster coordinates to world coordinates:
 
