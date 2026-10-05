@@ -23,3 +23,10 @@ jobs:
           ./amiterrain convert terrain.atf terrain.raw
           test "$(stat -c%s terrain.raw)" = "8192"
           test "$(./amiterrain info terrain.pgm | sed 's/.*checksum=//')" = "$(./amiterrain info terrain.atf | sed 's/.*checksum=//')"
+          ./amiterrain convert --input-format pgm terrain.pgm --output-format wcs-elev terrain.elev
+          ./amiterrain validate terrain.elev
+          ./amiterrain convert --input-format wcs-elev terrain.elev --output-format atf from-wcs.atf
+          ./amiterrain validate from-wcs.atf
+          ./amiterrain convert --input-format pgm terrain.pgm --output-format vista-array terrain.dem
+          ./amiterrain convert --input-format vista-array --width 64 --height 64 terrain.dem --output-format atf from-vista.atf
+          ./amiterrain validate from-vista.atf
