@@ -97,7 +97,19 @@ Project/scene interchange is a separate compatibility layer from terrain interch
 
 Priority: **P0 research / P1 implementation**.
 
-Collect original manuals, sample landscapes and known-good files before declaring exact native-format support. Common interchange formats can be implemented independently while native files remain under research.
+Period reviews describe Scenery Animator 4.x landscapes as DEM terrain data, but current research has not established a separate, source-backed native Scenery Animator terrain container. AmiTerrain therefore does **not** invent or claim a `scenery-dem` codec.
+
+Research/qualification plan:
+
+1. inspect original manuals and legally usable landscape files for versions 1.x through 4.x;
+2. record file signatures, dimensions, byte order and elevation semantics before implementing a native adapter;
+3. compare known landscape files against Vista/VistaPro DEM and generic DEM representations;
+4. preserve checksums/metadata for original commercial fixtures that cannot be redistributed;
+5. only promote native compatibility after independent files from more than one Scenery Animator version pass.
+
+Interchange compatibility can proceed independently. Priority formats useful to classic and modern Scenery workflows are DTED, USGS DEM and IFF height/elevation data; modern extensions include SRTM/HGT, ESRI ASCII Grid, Terragen and GeoTIFF.
+
+Scenery scene/object/project compatibility is a separate layer from terrain compatibility and should not be conflated with DEM import.
 
 ## Compatibility fixtures
 
