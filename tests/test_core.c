@@ -178,6 +178,23 @@ int main(void)
         assert(b.samples[4]==(uint16_t)(10+32768) && b.samples[5]==(uint16_t)(-5+32768));
     }
 
+    /* USGS DEM profile spanning more than one 1024-byte logical record. */
+    {
+        FILE *uf=fopen("test-usgs-long.dem","wb"); char a[1024],bh[144],tmp[64],blank=' '; unsigned int y;
+        assert(uf!=NULL); memset(a,' ',sizeof(a)); memcpy(a+852,"     1",6); memcpy(a+858,"     1",6);
+        assert(fwrite(a,1,sizeof(a),uf)==sizeof(a)); memset(bh,' ',sizeof(bh));
+        memcpy(bh,"     1",6); memcpy(bh+6,"     1",6); memcpy(bh+12,"   200",6); memcpy(bh+18,"     1",6);
+        snprintf(tmp,sizeof(tmp),"%24s","0.000000000000000D+00"); memcpy(bh+24,tmp,24); memcpy(bh+48,tmp,24); memcpy(bh+72,tmp,24);
+        assert(fwrite(bh,1,sizeof(bh),uf)==sizeof(bh));
+        for(y=0;y<200;++y) { snprintf(tmp,sizeof(tmp),"%6u",y); assert(fwrite(tmp,1,6,uf)==6); }
+        for(y=0;y<704;++y) assert(fwrite(&blank,1,1,uf)==1); /* 1344 bytes -> pad to 2048 */
+        assert(fclose(uf)==0); at_terrain_free(&b);
+        assert(at_read_usgs_dem("test-usgs-long.dem",&b)==0);
+        assert(b.width==1 && b.height==200);
+        assert(b.samples[0]==(uint16_t)(199+32768));
+        assert(b.samples[199]==32768);
+    }
+
     /* Geo metadata survives ATF and WCS 1.02 round trips. */
     at_terrain_free(&b);
     a.geo.valid=1; a.geo.origin_lat=58.0; a.geo.origin_lon=7.0;
@@ -192,7 +209,7 @@ int main(void)
     assert(b.geo.valid && b.geo.origin_lat==58.0 && b.geo.step_lon==0.02);
 
     at_terrain_free(&a); at_terrain_free(&b);
-    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem"); remove("test.dted"); remove("test-usgs.dem");
+    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem"); remove("test.dted"); remove("test-usgs.dem"); remove("test-usgs-long.dem");
     puts("core tests: PASS");
     return 0;
 }
