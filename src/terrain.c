@@ -1,6 +1,7 @@
 #include "amiterrain.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 int at_terrain_init(ATTerrain *terrain, uint32_t width, uint32_t height)
 {
@@ -13,6 +14,7 @@ int at_terrain_init(ATTerrain *terrain, uint32_t width, uint32_t height)
     if (!terrain->samples) return -1;
     terrain->width = width;
     terrain->height = height;
+    memset(&terrain->geo, 0, sizeof(terrain->geo));
     return 0;
 }
 
@@ -22,39 +24,34 @@ void at_terrain_free(ATTerrain *terrain)
     free(terrain->samples);
     terrain->samples = 0;
     terrain->width = terrain->height = 0;
+    memset(&terrain->geo, 0, sizeof(terrain->geo));
 }
 
 static uint32_t at_xorshift32(uint32_t *state)
 {
     uint32_t x = *state;
     if (x == 0) x = 0x6d2b79f5UL;
-    x ^= x << 13;
-    x ^= x >> 17;
-    x ^= x << 5;
-    *state = x;
-    return x;
+    x ^= x << 13; x ^= x >> 17; x ^= x << 5;
+    *state = x; return x;
 }
 
 void at_generate_noise(ATTerrain *terrain, uint32_t seed)
 {
-    size_t i, count;
-    uint32_t state = seed;
+    size_t i, count; uint32_t state = seed;
     if (!terrain || !terrain->samples) return;
     count = (size_t)terrain->width * (size_t)terrain->height;
-    for (i = 0; i < count; ++i)
-        terrain->samples[i] = (uint16_t)(at_xorshift32(&state) >> 16);
+    for (i = 0; i < count; ++i) terrain->samples[i] = (uint16_t)(at_xorshift32(&state) >> 16);
 }
 
 uint32_t at_checksum(const ATTerrain *terrain)
 {
-    size_t i, count;
-    uint32_t h = 2166136261UL;
+    size_t i, count; uint32_t h = 2166136261UL;
     if (!terrain || !terrain->samples) return 0;
     count = (size_t)terrain->width * (size_t)terrain->height;
     for (i = 0; i < count; ++i) {
         uint16_t v = terrain->samples[i];
         h ^= (uint8_t)(v >> 8); h *= 16777619UL;
-        h ^= (uint8_t)v;        h *= 16777619UL;
+        h ^= (uint8_t)v; h *= 16777619UL;
     }
     return h;
 }
