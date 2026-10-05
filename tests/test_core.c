@@ -5,7 +5,7 @@
 
 int main(void)
 {
-    ATTerrain a={0,0,0}, b={0,0,0};
+    ATTerrain a={0}, b={0};
     uint32_t ca, cb;
     assert(at_terrain_init(&a,32,32)==0);
     assert(at_terrain_init(&b,32,32)==0);
