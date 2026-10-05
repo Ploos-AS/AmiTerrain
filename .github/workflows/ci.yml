@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  host:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: make
+      - name: Test
+        run: make test
+      - name: Smoke test CLI
+        run: |
+          ./amiterrain generate 64 64 6502 terrain.pgm
+          ./amiterrain validate terrain.pgm
+          ./amiterrain convert terrain.pgm terrain.raw
+          test "$(stat -c%s terrain.raw)" = "8192"
