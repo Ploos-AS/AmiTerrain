@@ -305,6 +305,23 @@ int at_read_dted(const char *path, ATTerrain *t)
         t->geo.transform[3]=first_y+(double)(t->height-1U)*dy;
         t->geo.transform[4]=0.0; t->geo.transform[5]=-dy;
     }
+    /* Preserve spatial metadata after the terrain allocation/read completes. */
+    if(ground_units==3 && dx>0.0 && dy>0.0) {
+        t->geo.valid=1; t->geo.crs_type=AT_CRS_GEOGRAPHIC; t->geo.coordinate_units=AT_COORD_UNITS_DEGREES;
+        t->geo.origin_lon=first_x/3600.0;
+        t->geo.origin_lat=(first_y+(double)(t->height-1U)*dy)/3600.0;
+        t->geo.step_lon=dx/3600.0; t->geo.step_lat=-dy/3600.0; t->geo.elevation_scale=1.0;
+        t->geo.transform[0]=t->geo.origin_lon; t->geo.transform[1]=t->geo.step_lon;
+        t->geo.transform[3]=t->geo.origin_lat; t->geo.transform[5]=t->geo.step_lat;
+    } else if((ground_units==1 || ground_units==2) && dx>0.0 && dy>0.0) {
+        t->geo.valid=1; t->geo.crs_type=AT_CRS_PROJECTED;
+        t->geo.coordinate_units=(ground_units==1)?AT_COORD_UNITS_FEET:AT_COORD_UNITS_METERS;
+        t->geo.epsg=at_usgs_epsg(proj_sys,proj_zone,hdatum);
+        t->geo.projection_system=(int32_t)proj_sys; t->geo.projection_zone=(int32_t)proj_zone; t->geo.horizontal_datum=(int32_t)hdatum;
+        t->geo.elevation_scale=1.0;
+        t->geo.transform[0]=first_x; t->geo.transform[1]=dx;
+        t->geo.transform[3]=first_y+(double)(t->height-1U)*dy; t->geo.transform[5]=-dy;
+    }
     fclose(f); return 0;
 fail:
     at_terrain_free(t); fclose(f); return -1;
@@ -338,7 +355,7 @@ static int32_t at_usgs_epsg(long proj_sys, long zone, long datum)
 
 int at_read_usgs_dem(const char *path, ATTerrain *t)
 {
-    FILE *f; char a[1024],bh[144],field[7]; long rows,cols,pr,pc,n,one,ground_units,proj_sys=0,proj_zone=0,hdatum=0; uint32_t x,y; double x0,y0,z0,dx,dy,first_x=0.0,first_y=0.0;
+    FILE *f; char a[1024],bh[144],field[7]; long rows,cols,pr,pc,n,one,ground_units,proj_sys=0,proj_zone=0,hdatum=0; uint32_t x,y; double x0,y0,z0,dx,dy,dz,first_x=0.0,first_y=0.0;
     if(!path||!t) return -1; f=fopen(path,"rb"); if(!f) return -1;
     if(fread(a,1,1024,f)!=1024) { fclose(f); return -1; }
     /* A-record ground reference system is at 156; units/resolution are later.
@@ -353,9 +370,11 @@ int at_read_usgs_dem(const char *path, ATTerrain *t)
         hdatum=strtol(dbuf,&end,10);
         if(end==dbuf) hdatum=0;
     }
-    if(at_usgs_d24(a+816,&dx)) dx=0.0;
-    if(at_usgs_d24(a+840,&dy)) dy=0.0;
-    /* A-record elements 21/22: rows of profiles (normally 1), columns of profiles. */
+    /* A-record spatial resolution is 3E12.6: x, y, z. */
+    if(at_usgs_d12(a+816,&dx)) dx=0.0;
+    if(at_usgs_d12(a+828,&dy)) dy=0.0;
+    if(at_usgs_d12(a+840,&dz) || dz<=0.0) dz=1.0;
+    /* Profile rows/columns immediately follow the 36-byte resolution array. */
     if(at_usgs_i6(a+852,&rows)||at_usgs_i6(a+858,&cols)||rows!=1||cols<=0) { fclose(f); return -1; }
     /* Read first B header to discover the rectangular profile height. */
     if(fread(bh,1,144,f)!=144 || at_usgs_i6(bh,&pr)||at_usgs_i6(bh+6,&pc) ||
@@ -373,8 +392,11 @@ int at_read_usgs_dem(const char *path, ATTerrain *t)
             long ev; int32_t elev;
             if(fread(field,1,6,f)!=6) goto fail; field[6]=0;
             { char *e; ev=strtol(field,&e,10); if(e==field) goto fail; }
-            elev=(int32_t)ev+(int32_t)z0;
-            if(elev < -32768 || elev > 32767) goto fail;
+            {
+                double ze=z0+(double)ev*dz;
+                if(ze < -32768.0 || ze > 32767.0) goto fail;
+                elev=(int32_t)(ze < 0.0 ? ze-0.5 : ze+0.5);
+            }
             t->samples[(size_t)(t->height-1U-y)*t->width+x]=(uint16_t)(elev+32768);
         }
         /* B profiles are padded to a 1024-byte logical-record boundary and may
