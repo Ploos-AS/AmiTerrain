@@ -296,7 +296,7 @@ int at_read_dted(const char *path, ATTerrain *t)
         t->geo.valid=1;
         t->geo.crs_type=AT_CRS_PROJECTED;
         t->geo.coordinate_units=(ground_units==1)?AT_COORD_UNITS_FEET:AT_COORD_UNITS_METERS;
-        t->geo.epsg=0;
+        t->geo.epsg=at_usgs_epsg(proj_sys,proj_zone,hdatum);
         t->geo.projection_system=(int32_t)proj_sys;
         t->geo.projection_zone=(int32_t)proj_zone;
         t->geo.horizontal_datum=(int32_t)hdatum;
@@ -325,6 +325,17 @@ static int at_usgs_d24(const char *p, double *v)
     for(q=b;*q;++q) if(*q=='D'||*q=='d') *q='E';
     *v=strtod(b,&e); return e==b ? -1 : 0;
 }
+static int32_t at_usgs_epsg(long proj_sys, long zone, long datum)
+{
+    /* USGS DEM projection code 1 is UTM. Datum codes used here follow the
+       classic DEM horizontal datum field: 1=NAD27, 2=WGS72, 3=WGS84, 4=NAD83. */
+    if(proj_sys!=1 || zone<1 || zone>60) return 0;
+    if(datum==1) return (int32_t)(26700+zone); /* NAD27 / UTM north */
+    if(datum==4) return (int32_t)(26900+zone); /* NAD83 / UTM north */
+    if(datum==3) return (int32_t)(32600+zone); /* WGS84 / UTM north */
+    return 0;
+}
+
 int at_read_usgs_dem(const char *path, ATTerrain *t)
 {
     FILE *f; char a[1024],bh[144],field[7]; long rows,cols,pr,pc,n,one,ground_units,proj_sys=0,proj_zone=0,hdatum=0; uint32_t x,y; double x0,y0,z0,dx,dy,first_x=0.0,first_y=0.0;
