@@ -153,6 +153,31 @@ int main(void)
         assert(b.samples[5]==(uint16_t)(100+32768));
     }
 
+    /* Synthetic classic USGS DEM: one A record and two rectangular B profiles. */
+    {
+        FILE *uf=fopen("test-usgs.dem","wb"); char a[1024],brec[1024]; unsigned int x,y;
+        const int vals[2][3]={{10,20,30},{-5,0,15}};
+        assert(uf!=NULL); memset(a,' ',sizeof(a));
+        memcpy(a+852,"     1",6); memcpy(a+858,"     2",6);
+        assert(fwrite(a,1,sizeof(a),uf)==sizeof(a));
+        for(x=0;x<2;++x) {
+            char tmp[64]; memset(brec,' ',sizeof(brec));
+            snprintf(tmp,sizeof(tmp),"%6d",1); memcpy(brec,tmp,6);
+            snprintf(tmp,sizeof(tmp),"%6u",x+1); memcpy(brec+6,tmp,6);
+            memcpy(brec+12,"     3",6); memcpy(brec+18,"     1",6);
+            snprintf(tmp,sizeof(tmp),"%24s","0.000000000000000D+00"); memcpy(brec+24,tmp,24);
+            snprintf(tmp,sizeof(tmp),"%24s","0.000000000000000D+00"); memcpy(brec+48,tmp,24);
+            snprintf(tmp,sizeof(tmp),"%24s","0.000000000000000D+00"); memcpy(brec+72,tmp,24);
+            for(y=0;y<3;++y) { snprintf(tmp,sizeof(tmp),"%6d",vals[x][y]); memcpy(brec+144+6*y,tmp,6); }
+            assert(fwrite(brec,1,sizeof(brec),uf)==sizeof(brec));
+        }
+        assert(fclose(uf)==0); at_terrain_free(&b);
+        assert(at_read_usgs_dem("test-usgs.dem",&b)==0);
+        assert(b.width==2 && b.height==3);
+        assert(b.samples[0]==(uint16_t)(30+32768) && b.samples[1]==(uint16_t)(15+32768));
+        assert(b.samples[4]==(uint16_t)(10+32768) && b.samples[5]==(uint16_t)(-5+32768));
+    }
+
     /* Geo metadata survives ATF and WCS 1.02 round trips. */
     at_terrain_free(&b);
     a.geo.valid=1; a.geo.origin_lat=58.0; a.geo.origin_lon=7.0;
@@ -167,7 +192,7 @@ int main(void)
     assert(b.geo.valid && b.geo.origin_lat==58.0 && b.geo.step_lon==0.02);
 
     at_terrain_free(&a); at_terrain_free(&b);
-    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem"); remove("test.dted");
+    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem"); remove("test.dted"); remove("test-usgs.dem");
     puts("core tests: PASS");
     return 0;
 }
