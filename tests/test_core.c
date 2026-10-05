@@ -75,6 +75,10 @@ int main(void)
             int16_t base=(int16_t)(100+(int)row);
             raw[0]=(unsigned char)(((uint16_t)base)>>8); raw[1]=(unsigned char)base;
             for(x=2;x<259;++x) raw[x]=1; /* monotonic deltas */
+            if(row==0) { /* force VistaPro's -128 escape/new-base path */
+                raw[2]=0x80; raw[3]=0x01; raw[4]=0xf4; /* new base = 500 */
+                for(x=5;x<259;++x) raw[x]=0;
+            }
             packed[p++]=127; memcpy(packed+p,raw,128); p+=128;
             packed[p++]=127; memcpy(packed+p,raw+128,128); p+=128;
             packed[p++]=2; memcpy(packed+p,raw+256,3); p+=3;
@@ -86,8 +90,20 @@ int main(void)
         assert(at_read_vistapro_dem("test-vistapro-native.dem",&b)==0);
         assert(b.width==258 && b.height==258);
         assert(b.samples[(257U*258U)]==(uint16_t)(100+32768));
+        assert(b.samples[(257U*258U)+1U]==(uint16_t)(500+32768));
         assert(b.samples[0]==(uint16_t)(357+32768));
         assert(b.samples[257]==(uint16_t)(357+257+32768));
+    }
+
+    /* Native VistaPro truncation must be rejected without retaining terrain. */
+    {
+        FILE *src=fopen("test-vistapro-native.dem","rb"), *dst=fopen("test-vistapro-truncated.dem","wb");
+        unsigned char buf[2100]; size_t n;
+        assert(src && dst); n=fread(buf,1,sizeof(buf),src); assert(n==sizeof(buf));
+        assert(fwrite(buf,1,n,dst)==n); fclose(src); fclose(dst);
+        at_terrain_free(&b);
+        assert(at_read_vistapro_dem("test-vistapro-truncated.dem",&b)!=0);
+        assert(b.samples==NULL);
     }
 
     /* Geo metadata survives ATF and WCS 1.02 round trips. */
@@ -104,7 +120,7 @@ int main(void)
     assert(b.geo.valid && b.geo.origin_lat==58.0 && b.geo.step_lon==0.02);
 
     at_terrain_free(&a); at_terrain_free(&b);
-    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem");
+    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem");
     puts("core tests: PASS");
     return 0;
 }
