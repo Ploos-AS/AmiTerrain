@@ -19,5 +19,7 @@ int at_write_pgm16(const char *path, const ATTerrain *terrain);
 int at_read_pgm16(const char *path, ATTerrain *terrain);
 int at_write_raw16be(const char *path, const ATTerrain *terrain);
 int at_read_raw16be(const char *path, uint32_t width, uint32_t height, ATTerrain *terrain);
+int at_write_atf(const char *path, const ATTerrain *terrain);
+int at_read_atf(const char *path, ATTerrain *terrain);
 
 #endif
