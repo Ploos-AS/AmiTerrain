@@ -63,7 +63,7 @@ int at_write_atf(const char *path, const ATTerrain *t)
     if (n > 0x7fffffffUL) return -1;
     hmap_size=(uint32_t)(n*2U);
     /* ATFN + HEAD(8+8) + SIZE(8+8) + HMAP(8+data). */
-    form_size=4U+16U+16U+8U+hmap_size+(t->geo.valid ? (56U+72U) : 0U);
+    form_size=4U+16U+16U+8U+hmap_size+(t->geo.valid ? (56U+84U) : 0U);
     f=fopen(path,"wb");
     if (!f) return -1;
     if (fwrite("FORM",1,4,f)!=4 || put_u32(f,form_size) ||
@@ -74,11 +74,14 @@ int at_write_atf(const char *path, const ATTerrain *t)
          put_f64(f,t->geo.origin_lon) || put_f64(f,t->geo.step_lat) ||
          put_f64(f,t->geo.step_lon) || put_f64(f,t->geo.elevation_scale) ||
          put_u32(f,0) || put_u32(f,0))) ||
-        (t->geo.valid && (chunk(f,"CRS ",64) || put_u32(f,(uint32_t)t->geo.crs_type) ||
+        (t->geo.valid && (chunk(f,"CRS ",76) || put_u32(f,(uint32_t)t->geo.crs_type) ||
          put_u32(f,(uint32_t)t->geo.coordinate_units) || put_u32(f,(uint32_t)t->geo.epsg) ||
          put_u32(f,0) || put_f64(f,t->geo.transform[0]) || put_f64(f,t->geo.transform[1]) ||
          put_f64(f,t->geo.transform[2]) || put_f64(f,t->geo.transform[3]) ||
-         put_f64(f,t->geo.transform[4]) || put_f64(f,t->geo.transform[5]))) ||
+         put_f64(f,t->geo.transform[4]) || put_f64(f,t->geo.transform[5]) ||
+         put_u32(f,(uint32_t)t->geo.projection_system) ||
+         put_u32(f,(uint32_t)t->geo.projection_zone) ||
+         put_u32(f,(uint32_t)t->geo.horizontal_datum))) ||
         chunk(f,"HMAP",hmap_size)) { fclose(f); return -1; }
     for (i=0;i<n;++i) if (put_u16(f,t->samples[i])) { fclose(f); return -1; }
     return fclose(f)==0 ? 0 : -1;
@@ -125,6 +128,11 @@ int at_read_atf(const char *path, ATTerrain *t)
             geo.crs_type=(ATCRSType)ct; geo.coordinate_units=(ATCoordinateUnits)cu;
             geo.epsg=(int32_t)epsg; (void)reserved;
             for(j=0;j<6;++j) if(get_f64(f,&geo.transform[j])) { fclose(f); return -1; }
+            if(size >= 76) {
+                uint32_t ps,pz,hd;
+                if(get_u32(f,&ps) || get_u32(f,&pz) || get_u32(f,&hd)) { fclose(f); return -1; }
+                geo.projection_system=(int32_t)ps; geo.projection_zone=(int32_t)pz; geo.horizontal_datum=(int32_t)hd;
+            }
             geo.valid=1; have_geo=1;
         } else if (!memcmp(id,"HMAP",4)) {
             size_t i,n;
