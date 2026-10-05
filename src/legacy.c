@@ -159,3 +159,49 @@ int at_write_wcs_elev(const char *path, const ATTerrain *t)
     }
     return fclose(f)==0?0:-1;
 }
+
+
+int at_read_vistapro_dem(const char *path, ATTerrain *t)
+{
+    FILE *f; unsigned char hdr[144], *packed=0, *tmp=0; uint32_t compression,w,h,row; size_t cap;
+    if(!path || !t) return -1;
+    f=fopen(path,"rb"); if(!f) return -1;
+    if(fread(hdr,1,sizeof(hdr),f)!=sizeof(hdr) || memcmp(hdr,"Vista DEM File",14)) { fclose(f); return -1; }
+    compression=at_be32(hdr+128); w=at_be32(hdr+136); h=at_be32(hdr+140);
+    if(!compression || w!=h || (w!=258 && w!=514 && w!=1026 && w!=2050)) { fclose(f); return -1; }
+    if(at_terrain_init(t,w,h)) { fclose(f); return -1; }
+    cap=(size_t)w*3U+16U;
+    packed=(unsigned char*)malloc(cap); tmp=(unsigned char*)malloc(cap);
+    if(!packed || !tmp || fseek(f,2048,SEEK_SET)) goto fail;
+    for(row=0;row<h;++row) {
+        int a=fgetc(f),b=fgetc(f); size_t count,pi=0,ti=0,x;
+        if(a==EOF||b==EOF) goto fail; count=((size_t)a<<8)|(unsigned)b;
+        if(!count || count>cap || fread(packed,1,count,f)!=count) goto fail;
+        while(pi<count) {
+            int8_t code=(int8_t)packed[pi++]; size_t n,j;
+            if(code<=0) {
+                if(pi>=count) goto fail; n=(size_t)(1-(int)code);
+                if(ti+n>cap) goto fail; for(j=0;j<n;++j) tmp[ti++]=packed[pi]; ++pi;
+            } else {
+                n=(size_t)code+1U; if(pi+n>count || ti+n>cap) goto fail;
+                memcpy(tmp+ti,packed+pi,n); ti+=n; pi+=n;
+            }
+        }
+        if(ti<2) goto fail;
+        {
+            size_t p=2; int32_t elev=(int16_t)(((uint16_t)tmp[0]<<8)|tmp[1]);
+            uint16_t *dst=t->samples+(size_t)(h-1U-row)*w;
+            dst[0]=(uint16_t)(elev+32768);
+            for(x=1;x<w;++x) {
+                int8_t d; if(p>=ti) goto fail; d=(int8_t)tmp[p++];
+                if(d==-128) { if(p+1>=ti) goto fail; elev=(int16_t)(((uint16_t)tmp[p]<<8)|tmp[p+1]); p+=2; }
+                else elev+=d;
+                if(elev<-32768 || elev>32767) goto fail;
+                dst[x]=(uint16_t)(elev+32768);
+            }
+        }
+    }
+    free(tmp); free(packed); fclose(f); return 0;
+fail:
+    free(tmp); free(packed); at_terrain_free(t); fclose(f); return -1;
+}
