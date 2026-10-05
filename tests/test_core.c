@@ -123,14 +123,18 @@ int main(void)
         assert(fwrite(uhl,1,80,df)==80);
         assert(fwrite(zeros,1,sizeof(zeros),df)==sizeof(zeros));
         for(col=0;col<2;++col) {
-            unsigned char ph[8]={0xaa,0,0,0,0,0,0,0}, tail[4]={0};
+            unsigned char ph[8]={0xaa,0,0,0,0,0,0,0}, tail[4]; unsigned long checksum=0; unsigned int k;
             ph[4]=(unsigned char)(col>>8); ph[5]=(unsigned char)col;
-            assert(fwrite(ph,1,8,df)==8);
+            assert(fwrite(ph,1,8,df)==8); for(k=0;k<8;++k) checksum+=ph[k];
             for(row=0;row<3;++row) {
-                unsigned int mag=(unsigned int)(vals[col][row]<0?-vals[col][row]:vals[col][row]);
-                unsigned int raw=mag | (vals[col][row]<0?0x8000U:0U);
-                assert(fputc((int)(raw>>8),df)!=EOF); assert(fputc((int)(raw&255),df)!=EOF);
+                int v=vals[col][row]; unsigned int mag,raw,hi,lo;
+                if(col==0 && row==1) { raw=0xffffU; } /* DTED void */
+                else { mag=(unsigned int)(v<0?-v:v); raw=mag | (v<0?0x8000U:0U); }
+                hi=raw>>8; lo=raw&255U; checksum+=hi+lo;
+                assert(fputc((int)hi,df)!=EOF); assert(fputc((int)lo,df)!=EOF);
             }
+            tail[0]=(unsigned char)(checksum>>24); tail[1]=(unsigned char)(checksum>>16);
+            tail[2]=(unsigned char)(checksum>>8); tail[3]=(unsigned char)checksum;
             assert(fwrite(tail,1,4,df)==4);
         }
         assert(fclose(df)==0);
@@ -144,6 +148,7 @@ int main(void)
         assert(b.geo.step_lat< -0.009999 && b.geo.step_lat> -0.010001);
         assert(b.samples[0]==(uint16_t)(34+32768));
         assert(b.samples[1]==(uint16_t)(300+32768));
+        assert(b.samples[2]==0); /* void survives distinctly */
         assert(b.samples[4]==(uint16_t)(-12+32768));
         assert(b.samples[5]==(uint16_t)(100+32768));
     }
