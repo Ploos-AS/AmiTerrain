@@ -25,8 +25,14 @@ int main(void)
     assert(b.width==a.width && b.height==a.height);
     assert(at_checksum(&b)==ca);
 
+    assert(at_write_vistapro_binary("test-vistapro.dem",&a)==0);
+    at_terrain_free(&b);
+    assert(at_read_vistapro_binary("test-vistapro.dem",a.width,a.height,&b)==0);
+    assert(b.width==a.width && b.height==a.height);
+    assert(at_checksum(&b)==ca);
+
     at_terrain_free(&a); at_terrain_free(&b);
-    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf");
+    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem");
     puts("core tests: PASS");
     return 0;
 }
