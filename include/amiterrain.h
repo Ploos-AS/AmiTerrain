@@ -5,9 +5,19 @@
 #include <stdint.h>
 
 typedef struct {
+    int valid;
+    double origin_lat;
+    double origin_lon;
+    double step_lat;
+    double step_lon;
+    double elevation_scale;
+} ATGeoMetadata;
+
+typedef struct {
     uint32_t width;
     uint32_t height;
     uint16_t *samples;
+    ATGeoMetadata geo;
 } ATTerrain;
 
 int at_terrain_init(ATTerrain *terrain, uint32_t width, uint32_t height);
@@ -24,5 +34,6 @@ int at_read_atf(const char *path, ATTerrain *terrain);
 int at_read_vistapro_binary(const char *path, uint32_t width, uint32_t height, ATTerrain *terrain);
 int at_write_vistapro_binary(const char *path, const ATTerrain *terrain);
 int at_read_wcs_elev(const char *path, ATTerrain *terrain);
+int at_write_wcs_elev(const char *path, const ATTerrain *terrain);
 
 #endif
