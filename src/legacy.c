@@ -346,8 +346,13 @@ int at_read_usgs_dem(const char *path, ATTerrain *t)
     if(at_usgs_i6(a+156,&proj_sys)) proj_sys=0;
     if(at_usgs_i6(a+162,&proj_zone)) proj_zone=0;
     if(at_usgs_i6(a+528,&ground_units)) ground_units=0;
-    /* Horizontal datum code is an optional later A-record field. */
-    if(at_usgs_i6(a+890,&hdatum)) hdatum=0;
+    /* USGS A-record element 27: horizontal datum, bytes 891-892 (I2). */
+    {
+        char dbuf[3]; char *end;
+        memcpy(dbuf,a+890,2); dbuf[2]='\0';
+        hdatum=strtol(dbuf,&end,10);
+        if(end==dbuf) hdatum=0;
+    }
     if(at_usgs_d24(a+816,&dx)) dx=0.0;
     if(at_usgs_d24(a+840,&dy)) dy=0.0;
     /* A-record elements 21/22: rows of profiles (normally 1), columns of profiles. */
