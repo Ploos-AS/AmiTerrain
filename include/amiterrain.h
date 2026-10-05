@@ -35,6 +35,7 @@ int at_read_vistapro_binary(const char *path, uint32_t width, uint32_t height, A
 int at_write_vistapro_binary(const char *path, const ATTerrain *terrain);
 int at_read_vistapro_dem(const char *path, ATTerrain *terrain);
 int at_read_dted(const char *path, ATTerrain *terrain);
+int at_read_usgs_dem(const char *path, ATTerrain *terrain);
 int at_read_wcs_elev(const char *path, ATTerrain *terrain);
 int at_write_wcs_elev(const char *path, const ATTerrain *terrain);
 
