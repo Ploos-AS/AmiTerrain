@@ -205,3 +205,38 @@ int at_read_vistapro_dem(const char *path, ATTerrain *t)
 fail:
     free(tmp); free(packed); at_terrain_free(t); fclose(f); return -1;
 }
+
+
+static int at_dted_ascii_u32(const unsigned char *p, size_t n, uint32_t *out)
+{
+    uint32_t v=0; size_t i; if(!p||!out||!n) return -1;
+    for(i=0;i<n;++i) { if(p[i]<'0'||p[i]>'9') return -1; v=v*10U+(uint32_t)(p[i]-'0'); }
+    *out=v; return 0;
+}
+
+int at_read_dted(const char *path, ATTerrain *t)
+{
+    FILE *f; unsigned char uhl[80], head[8], eb[2], sum[4]; uint32_t w,h,col,y;
+    if(!path||!t) return -1; f=fopen(path,"rb"); if(!f) return -1;
+    if(fread(uhl,1,80,f)!=80 || memcmp(uhl,"UHL1",4) ||
+       at_dted_ascii_u32(uhl+47,4,&w) || at_dted_ascii_u32(uhl+51,4,&h) ||
+       !w || !h) { fclose(f); return -1; }
+    if(fseek(f,648+2700,SEEK_CUR) || at_terrain_init(t,w,h)) { fclose(f); return -1; }
+    for(col=0;col<w;++col) {
+        uint32_t lon;
+        if(fread(head,1,8,f)!=8 || head[0]!=0xaa) goto fail;
+        lon=((uint32_t)head[4]<<8)|head[5];
+        if(lon!=col) goto fail;
+        for(y=0;y<h;++y) {
+            uint16_t raw,mag; int32_t elev;
+            if(fread(eb,1,2,f)!=2) goto fail;
+            raw=(uint16_t)(((uint16_t)eb[0]<<8)|eb[1]); mag=(uint16_t)(raw&0x7fffU);
+            elev=(raw&0x8000U)?-(int32_t)mag:(int32_t)mag;
+            t->samples[(size_t)(h-1U-y)*w+col]=(uint16_t)(elev+32768);
+        }
+        if(fread(sum,1,4,f)!=4) goto fail;
+    }
+    fclose(f); return 0;
+fail:
+    at_terrain_free(t); fclose(f); return -1;
+}
