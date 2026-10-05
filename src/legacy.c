@@ -297,6 +297,9 @@ int at_read_dted(const char *path, ATTerrain *t)
         t->geo.crs_type=AT_CRS_PROJECTED;
         t->geo.coordinate_units=(ground_units==1)?AT_COORD_UNITS_FEET:AT_COORD_UNITS_METERS;
         t->geo.epsg=0;
+        t->geo.projection_system=(int32_t)proj_sys;
+        t->geo.projection_zone=(int32_t)proj_zone;
+        t->geo.horizontal_datum=(int32_t)hdatum;
         t->geo.elevation_scale=1.0;
         t->geo.transform[0]=first_x; t->geo.transform[1]=dx; t->geo.transform[2]=0.0;
         t->geo.transform[3]=first_y+(double)(t->height-1U)*dy;
@@ -324,12 +327,16 @@ static int at_usgs_d24(const char *p, double *v)
 }
 int at_read_usgs_dem(const char *path, ATTerrain *t)
 {
-    FILE *f; char a[1024],bh[144],field[7]; long rows,cols,pr,pc,n,one,ground_units; uint32_t x,y; double x0,y0,z0,dx,dy,first_x=0.0,first_y=0.0;
+    FILE *f; char a[1024],bh[144],field[7]; long rows,cols,pr,pc,n,one,ground_units,proj_sys=0,proj_zone=0,hdatum=0; uint32_t x,y; double x0,y0,z0,dx,dy,first_x=0.0,first_y=0.0;
     if(!path||!t) return -1; f=fopen(path,"rb"); if(!f) return -1;
     if(fread(a,1,1024,f)!=1024) { fclose(f); return -1; }
     /* A-record ground reference system is at 156; units/resolution are later.
        Only geographic arc-second DEMs are mapped to ATGeoMetadata lat/lon. */
+    if(at_usgs_i6(a+156,&proj_sys)) proj_sys=0;
+    if(at_usgs_i6(a+162,&proj_zone)) proj_zone=0;
     if(at_usgs_i6(a+528,&ground_units)) ground_units=0;
+    /* Horizontal datum code is an optional later A-record field. */
+    if(at_usgs_i6(a+890,&hdatum)) hdatum=0;
     if(at_usgs_d24(a+816,&dx)) dx=0.0;
     if(at_usgs_d24(a+840,&dy)) dy=0.0;
     /* A-record elements 21/22: rows of profiles (normally 1), columns of profiles. */
