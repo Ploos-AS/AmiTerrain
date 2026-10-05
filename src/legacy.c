@@ -290,6 +290,17 @@ int at_read_dted(const char *path, ATTerrain *t)
         t->geo.coordinate_units=AT_COORD_UNITS_DEGREES;
         t->geo.transform[0]=t->geo.origin_lon; t->geo.transform[1]=t->geo.step_lon; t->geo.transform[2]=0.0;
         t->geo.transform[3]=t->geo.origin_lat; t->geo.transform[4]=0.0; t->geo.transform[5]=t->geo.step_lat;
+    } else if((ground_units==1 || ground_units==2) && dx>0.0 && dy>0.0) {
+        /* Projected USGS DEM: preserve the native grid without guessing a CRS
+           authority code. ground_units 1=feet, 2=metres. */
+        t->geo.valid=1;
+        t->geo.crs_type=AT_CRS_PROJECTED;
+        t->geo.coordinate_units=(ground_units==1)?AT_COORD_UNITS_FEET:AT_COORD_UNITS_METERS;
+        t->geo.epsg=0;
+        t->geo.elevation_scale=1.0;
+        t->geo.transform[0]=first_x; t->geo.transform[1]=dx; t->geo.transform[2]=0.0;
+        t->geo.transform[3]=first_y+(double)(t->height-1U)*dy;
+        t->geo.transform[4]=0.0; t->geo.transform[5]=-dy;
     }
     fclose(f); return 0;
 fail:
