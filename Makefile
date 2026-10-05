@@ -2,7 +2,7 @@ CC ?= cc
 CFLAGS ?= -O2 -Wall -Wextra -std=c99
 CPPFLAGS ?= -Iinclude
 
-LIBSRC = src/terrain.c src/io.c
+LIBSRC = src/terrain.c src/io.c src/atf.c
 
 all: amiterrain
 
@@ -16,6 +16,6 @@ test: test_core
 	./test_core
 
 clean:
-	rm -f amiterrain test_core test-roundtrip.pgm
+	rm -f amiterrain test_core test-roundtrip.pgm test-roundtrip.atf
 
 .PHONY: all test clean
