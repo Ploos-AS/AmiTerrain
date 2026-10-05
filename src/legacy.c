@@ -214,6 +214,24 @@ static int at_dted_ascii_u32(const unsigned char *p, size_t n, uint32_t *out)
     *out=v; return 0;
 }
 
+static int at_dted_coord(const unsigned char *p, int lon, double *out)
+{
+    unsigned int deg=0,min=0,sec=0; size_t nd=lon?3U:2U,i;
+    for(i=0;i<nd;++i) { if(p[i]<'0'||p[i]>'9') return -1; deg=deg*10U+(unsigned)(p[i]-'0'); }
+    for(i=nd;i<nd+2U;++i) { if(p[i]<'0'||p[i]>'9') return -1; min=min*10U+(unsigned)(p[i]-'0'); }
+    for(i=nd+2U;i<nd+4U;++i) { if(p[i]<'0'||p[i]>'9') return -1; sec=sec*10U+(unsigned)(p[i]-'0'); }
+    if((lon && p[7]!='E' && p[7]!='W') || (!lon && p[6]!='N' && p[6]!='S') || min>59U || sec>59U) return -1;
+    *out=(double)deg+(double)min/60.0+(double)sec/3600.0;
+    if((lon?p[7]:p[6])=='W' || (lon?p[7]:p[6])=='S') *out=-*out;
+    return 0;
+}
+
+static int at_dted_interval(const unsigned char *p, double *out)
+{
+    uint32_t v; if(at_dted_ascii_u32(p,4,&v)) return -1;
+    *out=(double)v/36000.0; return 0; /* tenths of arc-second -> degrees */
+}
+
 int at_read_dted(const char *path, ATTerrain *t)
 {
     FILE *f; unsigned char uhl[80], head[8], eb[2], sum[4]; uint32_t w,h,col,y;
@@ -222,6 +240,18 @@ int at_read_dted(const char *path, ATTerrain *t)
        at_dted_ascii_u32(uhl+47,4,&w) || at_dted_ascii_u32(uhl+51,4,&h) ||
        !w || !h) { fclose(f); return -1; }
     if(fseek(f,648+2700,SEEK_CUR) || at_terrain_init(t,w,h)) { fclose(f); return -1; }
+    {
+        double swlon,swlat,dlon,dlat;
+        if(!at_dted_coord(uhl+4,1,&swlon) && !at_dted_coord(uhl+12,0,&swlat) &&
+           !at_dted_interval(uhl+20,&dlon) && !at_dted_interval(uhl+24,&dlat)) {
+            t->geo.valid=1;
+            t->geo.origin_lon=swlon;
+            t->geo.origin_lat=swlat+(double)(h-1U)*dlat; /* canonical top/north row */
+            t->geo.step_lon=dlon;
+            t->geo.step_lat=-dlat;
+            t->geo.elevation_scale=1.0;
+        }
+    }
     for(col=0;col<w;++col) {
         uint32_t lon;
         if(fread(head,1,8,f)!=8 || head[0]!=0xaa) goto fail;
