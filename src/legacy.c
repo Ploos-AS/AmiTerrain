@@ -250,6 +250,10 @@ int at_read_dted(const char *path, ATTerrain *t)
             t->geo.step_lon=dlon;
             t->geo.step_lat=-dlat;
             t->geo.elevation_scale=1.0;
+            t->geo.crs_type=AT_CRS_GEOGRAPHIC;
+            t->geo.coordinate_units=AT_COORD_UNITS_DEGREES;
+            t->geo.transform[0]=t->geo.origin_lon; t->geo.transform[1]=t->geo.step_lon; t->geo.transform[2]=0.0;
+            t->geo.transform[3]=t->geo.origin_lat; t->geo.transform[4]=0.0; t->geo.transform[5]=t->geo.step_lat;
         }
     }
     for(col=0;col<w;++col) {
@@ -282,6 +286,10 @@ int at_read_dted(const char *path, ATTerrain *t)
         t->geo.step_lon=dx/3600.0;
         t->geo.step_lat=-dy/3600.0;
         t->geo.elevation_scale=1.0;
+        t->geo.crs_type=AT_CRS_GEOGRAPHIC;
+        t->geo.coordinate_units=AT_COORD_UNITS_DEGREES;
+        t->geo.transform[0]=t->geo.origin_lon; t->geo.transform[1]=t->geo.step_lon; t->geo.transform[2]=0.0;
+        t->geo.transform[3]=t->geo.origin_lat; t->geo.transform[4]=0.0; t->geo.transform[5]=t->geo.step_lat;
     }
     fclose(f); return 0;
 fail:
