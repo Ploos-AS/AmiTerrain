@@ -320,7 +320,8 @@ int at_read_usgs_dem(const char *path, ATTerrain *t)
             if(elev < -32768 || elev > 32767) goto fail;
             t->samples[(size_t)(t->height-1U-y)*t->width+x]=(uint16_t)(elev+32768);
         }
-        /* Initial subset requires each B record to fit one 1024-byte logical record. */
+        /* B profiles are padded to a 1024-byte logical-record boundary and may
+           span any number of records; elevation fields remain contiguous. */
         { long used=144L+6L*(long)t->height; long pad=(1024L-(used%1024L))%1024L;
           if(pad && fseek(f,pad,SEEK_CUR)) goto fail; }
     }
