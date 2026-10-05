@@ -106,6 +106,39 @@ int main(void)
         assert(b.samples==NULL);
     }
 
+    /* Synthetic DTED: UHL + DSI + ACC, two west-to-east profiles,
+       each containing three south-to-north signed-magnitude elevations. */
+    {
+        FILE *df=fopen("test.dted","wb");
+        unsigned char uhl[80]={0}, zeros[3348]={0};
+        const int vals[2][3]={{-12,0,34},{100,-200,300}};
+        unsigned int col,row;
+        assert(df!=NULL);
+        memcpy(uhl,"UHL1",4);
+        memcpy(uhl+47,"0002",4); memcpy(uhl+51,"0003",4);
+        assert(fwrite(uhl,1,80,df)==80);
+        assert(fwrite(zeros,1,sizeof(zeros),df)==sizeof(zeros));
+        for(col=0;col<2;++col) {
+            unsigned char ph[8]={0xaa,0,0,0,0,0,0,0}, tail[4]={0};
+            ph[4]=(unsigned char)(col>>8); ph[5]=(unsigned char)col;
+            assert(fwrite(ph,1,8,df)==8);
+            for(row=0;row<3;++row) {
+                unsigned int mag=(unsigned int)(vals[col][row]<0?-vals[col][row]:vals[col][row]);
+                unsigned int raw=mag | (vals[col][row]<0?0x8000U:0U);
+                assert(fputc((int)(raw>>8),df)!=EOF); assert(fputc((int)(raw&255),df)!=EOF);
+            }
+            assert(fwrite(tail,1,4,df)==4);
+        }
+        assert(fclose(df)==0);
+        at_terrain_free(&b);
+        assert(at_read_dted("test.dted",&b)==0);
+        assert(b.width==2 && b.height==3);
+        assert(b.samples[0]==(uint16_t)(34+32768));
+        assert(b.samples[1]==(uint16_t)(300+32768));
+        assert(b.samples[4]==(uint16_t)(-12+32768));
+        assert(b.samples[5]==(uint16_t)(100+32768));
+    }
+
     /* Geo metadata survives ATF and WCS 1.02 round trips. */
     at_terrain_free(&b);
     a.geo.valid=1; a.geo.origin_lat=58.0; a.geo.origin_lon=7.0;
@@ -120,7 +153,7 @@ int main(void)
     assert(b.geo.valid && b.geo.origin_lat==58.0 && b.geo.step_lon==0.02);
 
     at_terrain_free(&a); at_terrain_free(&b);
-    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem");
+    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem"); remove("test.dted");
     puts("core tests: PASS");
     return 0;
 }
