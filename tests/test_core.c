@@ -57,8 +57,21 @@ int main(void)
             assert(b.samples[i]==(uint16_t)((int32_t)vals[i]+32768));
     }
 
+    /* Geo metadata survives ATF and WCS 1.02 round trips. */
+    at_terrain_free(&b);
+    a.geo.valid=1; a.geo.origin_lat=58.0; a.geo.origin_lon=7.0;
+    a.geo.step_lat=0.01; a.geo.step_lon=0.02; a.geo.elevation_scale=1.0;
+    assert(at_write_atf("test-geo.atf",&a)==0);
+    assert(at_read_atf("test-geo.atf",&b)==0);
+    assert(b.geo.valid && b.geo.origin_lat==58.0 && b.geo.origin_lon==7.0);
+    at_terrain_free(&b);
+    assert(at_write_wcs_elev("test-wcs-out.elev",&a)==0);
+    assert(at_read_wcs_elev("test-wcs-out.elev",&b)==0);
+    assert(at_checksum(&b)==at_checksum(&a));
+    assert(b.geo.valid && b.geo.origin_lat==58.0 && b.geo.step_lon==0.02);
+
     at_terrain_free(&a); at_terrain_free(&b);
-    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev");
+    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev");
     puts("core tests: PASS");
     return 0;
 }
