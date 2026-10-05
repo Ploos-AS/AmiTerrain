@@ -1,0 +1,4 @@
+amiterrain
+test_core
+test-roundtrip.pgm
+*.o
