@@ -4,13 +4,36 @@
 #include <stddef.h>
 #include <stdint.h>
 
+typedef enum {
+    AT_CRS_UNKNOWN = 0,
+    AT_CRS_GEOGRAPHIC = 1,
+    AT_CRS_PROJECTED = 2
+} ATCRSType;
+
+typedef enum {
+    AT_COORD_UNITS_UNKNOWN = 0,
+    AT_COORD_UNITS_DEGREES = 1,
+    AT_COORD_UNITS_METERS = 2,
+    AT_COORD_UNITS_FEET = 3
+} ATCoordinateUnits;
+
 typedef struct {
     int valid;
+    /* v1 compatibility view for geographic north-up rasters. */
     double origin_lat;
     double origin_lon;
     double step_lat;
     double step_lon;
     double elevation_scale;
+
+    /* v2 generic spatial model.
+       World coordinate of pixel (col,row):
+       X = transform[0] + col*transform[1] + row*transform[2]
+       Y = transform[3] + col*transform[4] + row*transform[5] */
+    ATCRSType crs_type;
+    ATCoordinateUnits coordinate_units;
+    int32_t epsg;
+    double transform[6];
 } ATGeoMetadata;
 
 typedef struct {
