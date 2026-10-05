@@ -109,10 +109,10 @@ int at_read_atf(const char *path, ATTerrain *t)
             }
             have_size=1;
         } else if (!memcmp(id,"GEO ",4)) {
-            if (size < 48 || get_f64(f,&t->geo.origin_lat) || get_f64(f,&t->geo.origin_lon) ||
-                get_f64(f,&t->geo.step_lat) || get_f64(f,&t->geo.step_lon) ||
-                get_f64(f,&t->geo.elevation_scale)) { fclose(f); return -1; }
-            t->geo.valid=1;
+            if (size < 48 || get_f64(f,&geo.origin_lat) || get_f64(f,&geo.origin_lon) ||
+                get_f64(f,&geo.step_lat) || get_f64(f,&geo.step_lon) ||
+                get_f64(f,&geo.elevation_scale)) { fclose(f); return -1; }
+            geo.valid=1; have_geo=1;
         } else if (!memcmp(id,"HMAP",4)) {
             size_t i,n;
             if (!have_size || (size_t)width > ((size_t)-1)/(size_t)height) { fclose(f); return -1; }
