@@ -178,6 +178,28 @@ int main(void)
         assert(b.samples[4]==(uint16_t)(10+32768) && b.samples[5]==(uint16_t)(-5+32768));
     }
 
+    /* Projected USGS DEM metadata is preserved without inventing an EPSG code. */
+    {
+        FILE *uf=fopen("test-usgs-projected.dem","wb"); char a[1024],br[1024],tmp[64]; unsigned int y;
+        assert(uf!=NULL); memset(a,' ',sizeof(a));
+        memcpy(a+528,"     2",6); /* metres */
+        snprintf(tmp,sizeof(tmp),"%24s","1.000000000000000D+01"); memcpy(a+816,tmp,24);
+        snprintf(tmp,sizeof(tmp),"%24s","2.000000000000000D+01"); memcpy(a+840,tmp,24);
+        memcpy(a+852,"     1",6); memcpy(a+858,"     1",6);
+        assert(fwrite(a,1,sizeof(a),uf)==sizeof(a)); memset(br,' ',sizeof(br));
+        memcpy(br,"     1",6); memcpy(br+6,"     1",6); memcpy(br+12,"     3",6); memcpy(br+18,"     1",6);
+        snprintf(tmp,sizeof(tmp),"%24s","5.000000000000000D+05"); memcpy(br+24,tmp,24);
+        snprintf(tmp,sizeof(tmp),"%24s","6.500000000000000D+06"); memcpy(br+48,tmp,24);
+        snprintf(tmp,sizeof(tmp),"%24s","0.000000000000000D+00"); memcpy(br+72,tmp,24);
+        for(y=0;y<3;++y) { snprintf(tmp,sizeof(tmp),"%6u",y); memcpy(br+144+6*y,tmp,6); }
+        assert(fwrite(br,1,sizeof(br),uf)==sizeof(br)); assert(fclose(uf)==0);
+        at_terrain_free(&b); assert(at_read_usgs_dem("test-usgs-projected.dem",&b)==0);
+        assert(b.geo.valid && b.geo.crs_type==AT_CRS_PROJECTED);
+        assert(b.geo.coordinate_units==AT_COORD_UNITS_METERS && b.geo.epsg==0);
+        assert(b.geo.transform[0]==500000.0 && b.geo.transform[1]==10.0);
+        assert(b.geo.transform[3]==6500040.0 && b.geo.transform[5]==-20.0);
+    }
+
     /* USGS DEM profile spanning more than one 1024-byte logical record. */
     {
         FILE *uf=fopen("test-usgs-long.dem","wb"); char a[1024],bh[144],tmp[64],blank=' '; unsigned int y;
@@ -227,7 +249,7 @@ int main(void)
     assert(b.geo.valid && b.geo.origin_lat==58.0 && b.geo.step_lon==0.02);
 
     at_terrain_free(&a); at_terrain_free(&b);
-    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem"); remove("test.dted"); remove("test-usgs.dem"); remove("test-usgs-long.dem"); remove("test-crs.atf");
+    remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem"); remove("test.dted"); remove("test-usgs.dem"); remove("test-usgs-long.dem"); remove("test-crs.atf"); remove("test-usgs-projected.dem");
     puts("core tests: PASS");
     return 0;
 }
