@@ -20,11 +20,25 @@ AmiTerrain currently has a lossless signed 16-bit Motorola/big-endian array adap
 
 This adapter is deliberately named **Vista binary array**. It must not be confused with the richer native VistaPro DEM file below.
 
-### Native VistaPro DEM — research/next
+### Native VistaPro DEM — Experimental import
 
-The released WCS/VNS source contains a dedicated VistaPro importer and documents the format as a variant of Amiga ByteRun1 compression. Elevations are delta-coded from a base elevation and the elevation stream begins at byte 2048.
+AmiTerrain implements native compressed VistaPro DEM import as the explicit CLI format `vistapro-dem`. The implementation follows the released WCS/VNS VistaPro importer rather than guessing from a `.dem` extension.
 
-AmiTerrain will implement this as a separate codec from the raw binary-array adapter.
+Current source-backed contract:
+
+- 32-byte file identifier begins with `Vista DEM File`
+- compression/header fields are Motorola/big-endian
+- square sizes 258, 514, 1026 and 2050 are recognised
+- elevation data begins at byte 2048
+- each raster begins with a big-endian 16-bit compressed byte count
+- raster payload uses VistaPro's ByteRun1-like coding
+- decoded data starts with a signed 16-bit base elevation
+- signed 8-bit deltas follow; `-128` escapes to a new signed 16-bit base
+- the southern raster is stored first and is reversed into AmiTerrain's north/top-first canonical memory order
+
+Synthetic regression coverage includes normal deltas, the new-base escape, orientation, and truncated-input rejection. Status remains **Experimental** until original VistaPro files can be checked without redistributing copyrighted sample data.
+
+This codec remains separate from the raw Vista binary-array adapter.
 
 Other Vista/VistaPro targets:
 
@@ -57,11 +71,11 @@ and export choices for:
 - Gray IFF
 - Color IFF
 
-### WCS ELEV/DEM — research
+### WCS ELEV/DEM — Experimental
 
-The source identifies the native terrain representation as the WCS/VNS **ELEV format DEM**. AmiTerrain will document its header/version and elevation layout from the loader/saver before implementing it.
+AmiTerrain implements source-backed WCS ELEV import and v1.02 export with synthetic regression coverage, including geographic metadata round trips. It remains **Experimental** pending qualification against original redistributable or privately checksum-verified WCS files.
 
-We will not assume that a generic raw binary DEM is the native WCS DEM.
+A generic raw binary DEM is not treated as the native WCS DEM.
 
 ### Broader WCS interchange
 
