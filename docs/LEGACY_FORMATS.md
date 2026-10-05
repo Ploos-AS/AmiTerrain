@@ -93,6 +93,29 @@ Historically relevant inputs/outputs to support include:
 
 Project/scene interchange is a separate compatibility layer from terrain interchange.
 
+
+## DTED — Experimental
+
+Priority: **P0**.
+
+AmiTerrain implements DTED terrain import through the explicit CLI format `dted`. The current reader follows the standard DTED record structure rather than relying only on historical application-specific loaders.
+
+Covered by synthetic regression tests:
+
+- UHL / DSI / ACC record layout
+- dimensions from UHL
+- west-to-east data profiles
+- south-to-north elevations converted to AmiTerrain north/top-first order
+- 16-bit big-endian signed-magnitude elevations
+- `-32767` DTED void/nodata handling
+- per-profile 32-bit checksum validation
+- UHL latitude/longitude origin and sample intervals
+- preservation of geographic metadata in AmiTerrain's canonical representation
+
+The same codec is intended for DTED Level 0, 1 and 2 (`.dt0`, `.dt1`, `.dt2`) because the level changes resolution rather than the fundamental profile encoding.
+
+Status remains **Experimental** until qualification against independent real-world DTED files.
+
 ## Scenery Animator
 
 Priority: **P0 research / P1 implementation**.
