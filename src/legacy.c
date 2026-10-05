@@ -277,3 +277,54 @@ int at_read_dted(const char *path, ATTerrain *t)
 fail:
     at_terrain_free(t); fclose(f); return -1;
 }
+
+
+/* Classic USGS DEM ASCII reader, initial rectangular-profile subset.
+   The format is one 1024-byte A record followed by B profile records.
+   B profiles are west-to-east; elevations within each profile are south-to-north. */
+static int at_usgs_i6(const char *p, long *v)
+{
+    char b[7]; char *e; memcpy(b,p,6); b[6]=0; *v=strtol(b,&e,10);
+    return e==b ? -1 : 0;
+}
+static int at_usgs_d24(const char *p, double *v)
+{
+    char b[25],*q,*e; memcpy(b,p,24); b[24]=0;
+    for(q=b;*q;++q) if(*q=='D'||*q=='d') *q='E';
+    *v=strtod(b,&e); return e==b ? -1 : 0;
+}
+int at_read_usgs_dem(const char *path, ATTerrain *t)
+{
+    FILE *f; char a[1024],bh[144],field[7]; long rows,cols,pr,pc,n,one; uint32_t x,y; double x0,y0,z0;
+    if(!path||!t) return -1; f=fopen(path,"rb"); if(!f) return -1;
+    if(fread(a,1,1024,f)!=1024) { fclose(f); return -1; }
+    /* A-record elements 21/22: rows of profiles (normally 1), columns of profiles. */
+    if(at_usgs_i6(a+852,&rows)||at_usgs_i6(a+858,&cols)||rows!=1||cols<=0) { fclose(f); return -1; }
+    /* Read first B header to discover the rectangular profile height. */
+    if(fread(bh,1,144,f)!=144 || at_usgs_i6(bh,&pr)||at_usgs_i6(bh+6,&pc) ||
+       at_usgs_i6(bh+12,&n)||at_usgs_i6(bh+18,&one)||pr!=1||pc!=1||n<=0||one!=1) { fclose(f); return -1; }
+    if(at_terrain_init(t,(uint32_t)cols,(uint32_t)n)) { fclose(f); return -1; }
+    for(x=0;x<(uint32_t)cols;++x) {
+        if(x) {
+            if(fread(bh,1,144,f)!=144 || at_usgs_i6(bh,&pr)||at_usgs_i6(bh+6,&pc) ||
+               at_usgs_i6(bh+12,&n)||at_usgs_i6(bh+18,&one)||pr!=1||pc!=(long)x+1 ||
+               n!=(long)t->height||one!=1) goto fail;
+        }
+        if(at_usgs_d24(bh+24,&x0)||at_usgs_d24(bh+48,&y0)||at_usgs_d24(bh+72,&z0)) goto fail;
+        (void)x0; (void)y0;
+        for(y=0;y<t->height;++y) {
+            long ev; int32_t elev;
+            if(fread(field,1,6,f)!=6) goto fail; field[6]=0;
+            { char *e; ev=strtol(field,&e,10); if(e==field) goto fail; }
+            elev=(int32_t)ev+(int32_t)z0;
+            if(elev < -32768 || elev > 32767) goto fail;
+            t->samples[(size_t)(t->height-1U-y)*t->width+x]=(uint16_t)(elev+32768);
+        }
+        /* Initial subset requires each B record to fit one 1024-byte logical record. */
+        { long used=144L+6L*(long)t->height; long pad=(1024L-(used%1024L))%1024L;
+          if(pad && fseek(f,pad,SEEK_CUR)) goto fail; }
+    }
+    fclose(f); return 0;
+fail:
+    at_terrain_free(t); fclose(f); return -1;
+}
