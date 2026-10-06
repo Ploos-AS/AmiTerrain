@@ -1,6 +1,10 @@
 #include "amiterrain.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static int32_t at_usgs_epsg(long proj_sys, long zone, long datum);
 
 int at_read_vistapro_binary(const char *path, uint32_t width, uint32_t height, ATTerrain *t)
 {
@@ -319,6 +323,13 @@ static int at_usgs_i6(const char *p, long *v)
     char b[7]; char *e; memcpy(b,p,6); b[6]=0; *v=strtol(b,&e,10);
     return e==b ? -1 : 0;
 }
+static int at_usgs_d12(const char *p, double *v)
+{
+    char b[13],*q,*e; memcpy(b,p,12); b[12]=0;
+    for(q=b;*q;++q) if(*q=='D'||*q=='d') *q='E';
+    *v=strtod(b,&e); return e==b ? -1 : 0;
+}
+
 static int at_usgs_d24(const char *p, double *v)
 {
     char b[25],*q,*e; memcpy(b,p,24); b[24]=0;
