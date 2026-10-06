@@ -370,6 +370,22 @@ int at_read_usgs_dem(const char *path, ATTerrain *t)
         { long used=144L+6L*(long)t->height; long pad=(1024L-(used%1024L))%1024L;
           if(pad && fseek(f,pad,SEEK_CUR)) goto fail; }
     }
+    if(ground_units==3 && dx>0.0 && dy>0.0) {
+        t->geo.valid=1; t->geo.crs_type=AT_CRS_GEOGRAPHIC; t->geo.coordinate_units=AT_COORD_UNITS_DEGREES;
+        t->geo.origin_lon=first_x/3600.0;
+        t->geo.origin_lat=(first_y+(double)(t->height-1U)*dy)/3600.0;
+        t->geo.step_lon=dx/3600.0; t->geo.step_lat=-dy/3600.0; t->geo.elevation_scale=1.0;
+        t->geo.transform[0]=t->geo.origin_lon; t->geo.transform[1]=t->geo.step_lon;
+        t->geo.transform[3]=t->geo.origin_lat; t->geo.transform[5]=t->geo.step_lat;
+    } else if((ground_units==1 || ground_units==2) && dx>0.0 && dy>0.0) {
+        t->geo.valid=1; t->geo.crs_type=AT_CRS_PROJECTED;
+        t->geo.coordinate_units=(ground_units==1)?AT_COORD_UNITS_FEET:AT_COORD_UNITS_METERS;
+        t->geo.epsg=at_usgs_epsg(proj_sys,proj_zone,hdatum);
+        t->geo.projection_system=(int32_t)proj_sys; t->geo.projection_zone=(int32_t)proj_zone; t->geo.horizontal_datum=(int32_t)hdatum;
+        t->geo.elevation_scale=1.0;
+        t->geo.transform[0]=first_x; t->geo.transform[1]=dx;
+        t->geo.transform[3]=first_y+(double)(t->height-1U)*dy; t->geo.transform[5]=-dy;
+    }
     fclose(f); return 0;
 fail:
     at_terrain_free(t); fclose(f); return -1;
