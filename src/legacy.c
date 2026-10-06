@@ -211,7 +211,8 @@ int at_read_vistapro_dem(const char *path, ATTerrain *t)
         }
     }
     free(tmp); free(packed); fclose(f); return 0;
-fail:\n    fprintf(stderr,"VistaPro decode failure stage=%d row=%u\\n",fail_stage,(unsigned)row);\n    free(tmp); free(packed); at_terrain_free(t); fclose(f); return -1;
+    fprintf(stderr,"VistaPro decode failure stage=%d row=%u\\n",fail_stage,(unsigned)row);
+    free(tmp); free(packed); at_terrain_free(t); fclose(f); return -1;
 }
 
 
