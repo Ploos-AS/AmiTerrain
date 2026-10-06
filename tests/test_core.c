@@ -75,7 +75,7 @@ int main(void)
             int16_t base=(int16_t)(100+(int)row);
             raw[0]=(unsigned char)(((uint16_t)base)>>8); raw[1]=(unsigned char)base;
             for(x=2;x<259;++x) raw[x]=1; /* monotonic deltas */
-            if(row==0) { /* force VistaPro's -128 escape/new-base path */
+            if(row==0) { /* force VistaPro's elevation -128 escape/new-base path */
                 raw[2]=0x80; raw[3]=0x01; raw[4]=0xf4; /* new base = 500 */
                 for(x=5;x<259;++x) raw[x]=0;
             }
