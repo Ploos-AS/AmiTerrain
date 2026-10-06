@@ -181,15 +181,20 @@ int at_read_vistapro_dem(const char *path, ATTerrain *t)
         int a=fgetc(f),b=fgetc(f); size_t count,pi=0,ti=0,x;
         if(a==EOF||b==EOF) goto fail; count=((size_t)a<<8)|(unsigned)b;
         if(!count || count>cap || fread(packed,1,count,f)!=count) goto fail;
+        /* VistaPro stores PackBits/ByteRun1 packets: 0..127 literal, -1..-127 repeat, -128 NOP. */
         while(pi<count) {
             int8_t code=(int8_t)packed[pi++]; size_t n,j;
-            if(code<=0) {
-                if(pi>=count) goto fail; n=(size_t)(1-(int)code);
-                if(ti+n>cap) goto fail; for(j=0;j<n;++j) tmp[ti++]=packed[pi]; ++pi;
-            } else {
-                n=(size_t)code+1U; if(pi+n>count || ti+n>cap) goto fail;
+            if(code>=0) {
+                n=(size_t)code+1U;
+                if(pi+n>count || ti+n>cap) goto fail;
                 memcpy(tmp+ti,packed+pi,n); ti+=n; pi+=n;
-            }
+            } else if(code!=-128) {
+                if(pi>=count) goto fail;
+                n=(size_t)(1-(int)code);
+                if(ti+n>cap) goto fail;
+                for(j=0;j<n;++j) tmp[ti++]=packed[pi];
+                ++pi;
+            } /* -128 is a no-op */
         }
         if(ti<2) goto fail;
         {
