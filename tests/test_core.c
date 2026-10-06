@@ -158,6 +158,7 @@ int main(void)
         FILE *uf=fopen("test-usgs.dem","wb"); char a[1024],brec[1024]; unsigned int x,y;
         const int vals[2][3]={{10,20,30},{-5,0,15}};
         assert(uf!=NULL); memset(a,' ',sizeof(a));
+        { char tmp[64]; snprintf(tmp,sizeof(tmp),"%12.6E",1.0); memcpy(a+840,tmp,12); }
         memcpy(a+852,"     1",6); memcpy(a+858,"     2",6);
         assert(fwrite(a,1,sizeof(a),uf)==sizeof(a));
         for(x=0;x<2;++x) {
@@ -183,8 +184,9 @@ int main(void)
         FILE *uf=fopen("test-usgs-projected.dem","wb"); char a[1024],br[1024],tmp[64]; unsigned int y;
         assert(uf!=NULL); memset(a,' ',sizeof(a));
         memcpy(a+528,"     2",6); /* metres */
-        snprintf(tmp,sizeof(tmp),"%24s","1.000000000000000D+01"); memcpy(a+816,tmp,24);
-        snprintf(tmp,sizeof(tmp),"%24s","2.000000000000000D+01"); memcpy(a+840,tmp,24);
+        snprintf(tmp,sizeof(tmp),"%12.6E",10.0); memcpy(a+816,tmp,12);
+        snprintf(tmp,sizeof(tmp),"%12.6E",20.0); memcpy(a+828,tmp,12);
+        snprintf(tmp,sizeof(tmp),"%12.6E",2.0); memcpy(a+840,tmp,12);
         memcpy(a+852,"     1",6); memcpy(a+858,"     1",6);
         assert(fwrite(a,1,sizeof(a),uf)==sizeof(a)); memset(br,' ',sizeof(br));
         memcpy(br,"     1",6); memcpy(br+6,"     1",6); memcpy(br+12,"     3",6); memcpy(br+18,"     1",6);
@@ -198,6 +200,7 @@ int main(void)
         assert(b.geo.coordinate_units==AT_COORD_UNITS_METERS && b.geo.epsg==0);
         assert(b.geo.transform[0]==500000.0 && b.geo.transform[1]==10.0);
         assert(b.geo.transform[3]==6500040.0 && b.geo.transform[5]==-20.0);
+        assert(b.samples[0]==(uint16_t)(4+32768) && b.samples[2]==32768); /* z resolution 2 */
     }
 
     /* USGS UTM/NAD83 identity survives import -> ATF -> read. */
@@ -227,7 +230,7 @@ int main(void)
     /* USGS DEM profile spanning more than one 1024-byte logical record. */
     {
         FILE *uf=fopen("test-usgs-long.dem","wb"); char a[1024],bh[144],tmp[64],blank=' '; unsigned int y;
-        assert(uf!=NULL); memset(a,' ',sizeof(a)); memcpy(a+852,"     1",6); memcpy(a+858,"     1",6);
+        assert(uf!=NULL); memset(a,' ',sizeof(a)); snprintf(tmp,sizeof(tmp),"%12.6E",1.0); memcpy(a+840,tmp,12); memcpy(a+852,"     1",6); memcpy(a+858,"     1",6);
         assert(fwrite(a,1,sizeof(a),uf)==sizeof(a)); memset(bh,' ',sizeof(bh));
         memcpy(bh,"     1",6); memcpy(bh+6,"     1",6); memcpy(bh+12,"   200",6); memcpy(bh+18,"     1",6);
         snprintf(tmp,sizeof(tmp),"%24s","0.000000000000000D+00"); memcpy(bh+24,tmp,24); memcpy(bh+48,tmp,24); memcpy(bh+72,tmp,24);
