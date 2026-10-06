@@ -84,6 +84,7 @@ int main(void)
             packed[p++]=2; memcpy(packed+p,raw+256,3); p+=3;
             assert(fputc((int)(p>>8),vf)!=EOF); assert(fputc((int)(p&255),vf)!=EOF);
             assert(fwrite(packed,1,p,vf)==p);
+            assert(p==262);
         }
         assert(fclose(vf)==0);
         at_terrain_free(&b);
