@@ -66,9 +66,9 @@ int main(void)
         unsigned char hdr[2048]={0}; size_t row,x;
         assert(vf!=NULL);
         memcpy(hdr,"Vista DEM File",14);
-        hdr[131]=1; /* compression != 0 */
-        hdr[138]=1; hdr[139]=2; /* 258 BE */
-        hdr[142]=1; hdr[143]=2;
+        hdr[131]=1; /* compression BE32 at offset 128 */
+        hdr[138]=1; hdr[139]=2; /* width 258: BE32 at offset 136 */
+        hdr[142]=1; hdr[143]=2; /* height 258: BE32 at offset 140 */
         assert(fwrite(hdr,1,sizeof(hdr),vf)==sizeof(hdr));
         for(row=0;row<258;++row) {
             unsigned char raw[259], packed[262]; size_t p=0;
