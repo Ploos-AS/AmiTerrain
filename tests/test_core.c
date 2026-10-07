@@ -535,6 +535,19 @@ int main(void)
         at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-partial-form.iff",&b)!=0);
     }
 
+    /* BODY length must constrain decoding even if following bytes exist. */
+    {
+        static const unsigned char shortbody[] = {
+            'F','O','R','M',0,0,0,48,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1,
+            'B','O','D','Y',0,0,0,1, 0x80,0,
+            'J','U','N','K',0,0,0,0
+        };
+        FILE *xf=fopen("test-ilbm-short-body.iff","wb"); assert(xf);
+        assert(fwrite(shortbody,1,sizeof(shortbody),xf)==sizeof(shortbody)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-short-body.iff",&b)!=0);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
