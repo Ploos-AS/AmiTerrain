@@ -218,6 +218,10 @@ int main(void)
         assert(b.samples[1]==65535);
         assert(b.samples[2]==0);
         assert(b.samples[3]==32767 && b.samples[4]==32768 && b.samples[8]==32772);
+        assert(b.geo.valid && b.geo.crs_type==AT_CRS_GEOGRAPHIC && b.geo.coordinate_units==AT_COORD_UNITS_DEGREES);
+        assert(b.geo.origin_lat==59.0 && b.geo.origin_lon==7.0);
+        assert(b.geo.step_lat==-0.5 && b.geo.step_lon==0.5);
+        assert(b.geo.transform[0]==7.0 && b.geo.transform[1]==0.5 && b.geo.transform[3]==59.0 && b.geo.transform[5]==-0.5);
     }
 
     /* USGS documented void elevation -32767 maps to canonical missing sample 0. */
