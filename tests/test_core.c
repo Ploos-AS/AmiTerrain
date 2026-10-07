@@ -373,6 +373,32 @@ int main(void)
 
     at_terrain_free(&a); at_terrain_free(&b);
     remove("test-roundtrip.pgm"); remove("test-roundtrip.atf"); remove("test-vistapro.dem"); remove("test-wcs.elev"); remove("test-geo.atf"); remove("test-wcs-out.elev"); remove("test-vistapro-native.dem"); remove("test-vistapro-truncated.dem"); remove("test.dted"); remove("test-usgs.dem"); remove("test-usgs-long.dem"); remove("test-crs.atf"); remove("test-usgs-projected.dem"); remove("test-usgs-utm.dem"); remove("test-usgs-utm.atf");
+    /* ILBM heightmaps: standard planar BODY, uncompressed and ByteRun1. */
+    {
+        static const unsigned char raw[] = {
+            'F','O','R','M',0,0,0,42,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,4,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,4,0,1,
+            'B','O','D','Y',0,0,0,2, 0x50,0x00
+        };
+        FILE *xf=fopen("test-ilbm.iff","wb"); assert(xf!=NULL);
+        assert(fwrite(raw,1,sizeof(raw),xf)==sizeof(raw)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm.iff",&b)==0);
+        assert(b.width==4 && b.height==1);
+        assert(b.samples[0]==0 && b.samples[1]==65535 && b.samples[2]==0 && b.samples[3]==65535);
+    }
+    {
+        static const unsigned char packed[] = {
+            'F','O','R','M',0,0,0,44,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,4,0,1,0,0,0,0,1,0,1,0,0,0,10,10,0,4,0,1,
+            'B','O','D','Y',0,0,0,3, 1,0xA0,0x00,0
+        };
+        FILE *xf=fopen("test-ilbm-rle.iff","wb"); assert(xf!=NULL);
+        assert(fwrite(packed,1,sizeof(packed),xf)==sizeof(packed)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-rle.iff",&b)==0);
+        assert(b.width==4 && b.height==1);
+        assert(b.samples[0]==65535 && b.samples[1]==0 && b.samples[2]==65535 && b.samples[3]==0);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
