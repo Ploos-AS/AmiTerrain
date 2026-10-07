@@ -50,3 +50,30 @@ int at_read_ilbm_heightmap(const char *path, ATTerrain *t){
 fail:
     at_terrain_free(t); free(row); fclose(f); return -1;
 }
+
+
+static int put_be16(FILE *f,uint16_t v){ return fputc((v>>8)&255,f)==EOF||fputc(v&255,f)==EOF?-1:0; }
+static int put_be32(FILE *f,uint32_t v){ return fputc((v>>24)&255,f)==EOF||fputc((v>>16)&255,f)==EOF||fputc((v>>8)&255,f)==EOF||fputc(v&255,f)==EOF?-1:0; }
+
+int at_write_ilbm_heightmap(const char *path,const ATTerrain *t){
+    FILE *f; size_t rb,body; uint32_t form; uint32_t y,x,p; unsigned char *row;
+    if(!path||!t||!t->samples||!t->width||!t->height||t->width>65535U||t->height>65535U) return -1;
+    rb=((size_t)t->width+15U)/16U*2U; body=rb*8U*(size_t)t->height;
+    if(body>0xffffffffU-40U) return -1; form=(uint32_t)(4U+8U+20U+8U+body);
+    f=fopen(path,"wb"); if(!f) return -1;
+    if(fwrite("FORM",1,4,f)!=4||put_be32(f,form)||fwrite("ILBM",1,4,f)!=4||
+       fwrite("BMHD",1,4,f)!=4||put_be32(f,20)||put_be16(f,(uint16_t)t->width)||put_be16(f,(uint16_t)t->height)||
+       put_be16(f,0)||put_be16(f,0)||fputc(8,f)==EOF||fputc(0,f)==EOF||fputc(0,f)==EOF||fputc(0,f)==EOF||
+       put_be16(f,0)||fputc(10,f)==EOF||fputc(10,f)==EOF||put_be16(f,(uint16_t)t->width)||put_be16(f,(uint16_t)t->height)||
+       fwrite("BODY",1,4,f)!=4||put_be32(f,(uint32_t)body)){ fclose(f); return -1; }
+    row=(unsigned char*)malloc(rb); if(!row){ fclose(f); return -1; }
+    for(y=0;y<t->height;++y) for(p=0;p<8;++p){
+        memset(row,0,rb);
+        for(x=0;x<t->width;++x){
+            uint16_t s=t->samples[(size_t)y*t->width+x]; unsigned v=(unsigned)((s+128U)/257U);
+            if(v>255U) v=255U; if(v&(1U<<p)) row[x/8U]|=(unsigned char)(0x80U>>(x&7U));
+        }
+        if(fwrite(row,1,rb,f)!=rb){ free(row); fclose(f); return -1; }
+    }
+    free(row); return fclose(f)==0?0:-1;
+}
