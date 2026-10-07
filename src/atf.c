@@ -58,23 +58,26 @@ int at_write_atf(const char *path, const ATTerrain *t)
     FILE *f;
     size_t i, n;
     uint32_t hmap_size, form_size;
+    int write_geo, write_crs;
     if (!path || !t || !t->samples) return -1;
     n=(size_t)t->width*(size_t)t->height;
     if (n > 0x7fffffffUL) return -1;
     hmap_size=(uint32_t)(n*2U);
+    write_geo=t->geo.valid && t->geo.crs_type!=AT_CRS_PROJECTED;
+    write_crs=t->geo.valid;
     /* ATFN + HEAD(8+8) + SIZE(8+8) + HMAP(8+data). */
-    form_size=4U+16U+16U+8U+hmap_size+(t->geo.valid ? (56U+84U) : 0U);
+    form_size=4U+16U+16U+8U+hmap_size+(write_geo ? 56U : 0U)+(write_crs ? 84U : 0U);
     f=fopen(path,"wb");
     if (!f) return -1;
     if (fwrite("FORM",1,4,f)!=4 || put_u32(f,form_size) ||
         fwrite("ATFN",1,4,f)!=4 ||
         chunk(f,"HEAD",8) || put_u16(f,0) || put_u16(f,1) || put_u32(f,0) ||
         chunk(f,"SIZE",8) || put_u32(f,t->width) || put_u32(f,t->height) ||
-        (t->geo.valid && (chunk(f,"GEO ",48) || put_f64(f,t->geo.origin_lat) ||
+        (write_geo && (chunk(f,"GEO ",48) || put_f64(f,t->geo.origin_lat) ||
          put_f64(f,t->geo.origin_lon) || put_f64(f,t->geo.step_lat) ||
          put_f64(f,t->geo.step_lon) || put_f64(f,t->geo.elevation_scale) ||
          put_u32(f,0) || put_u32(f,0))) ||
-        (t->geo.valid && (chunk(f,"CRS ",76) || put_u32(f,(uint32_t)t->geo.crs_type) ||
+        (write_crs && (chunk(f,"CRS ",76) || put_u32(f,(uint32_t)t->geo.crs_type) ||
          put_u32(f,(uint32_t)t->geo.coordinate_units) || put_u32(f,(uint32_t)t->geo.epsg) ||
          put_u32(f,0) || put_f64(f,t->geo.transform[0]) || put_f64(f,t->geo.transform[1]) ||
          put_f64(f,t->geo.transform[2]) || put_f64(f,t->geo.transform[3]) ||
