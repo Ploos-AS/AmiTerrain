@@ -71,20 +71,20 @@ int main(void)
         hdr[142]=1; hdr[143]=2; /* height 258: BE32 at offset 140 */
         assert(fwrite(hdr,1,sizeof(hdr),vf)==sizeof(hdr));
         for(row=0;row<258;++row) {
-            unsigned char raw[259], packed[262]; size_t p=0;
+            unsigned char raw[261], packed[264]; size_t p=0;
             int16_t base=(int16_t)(100+(int)row);
             raw[0]=(unsigned char)(((uint16_t)base)>>8); raw[1]=(unsigned char)base;
-            for(x=2;x<259;++x) raw[x]=1; /* monotonic deltas */
+            for(x=2;x<259;++x) raw[x]=1; /* 257 deltas for 258 samples */
             if(row==0) { /* force VistaPro's elevation -128 escape/new-base path */
                 raw[2]=0x80; raw[3]=0x01; raw[4]=0xf4; /* new base = 500 */
-                for(x=5;x<259;++x) raw[x]=0;
+                for(x=5;x<261;++x) raw[x]=0;
             }
             packed[p++]=127; memcpy(packed+p,raw,128); p+=128;
             packed[p++]=127; memcpy(packed+p,raw+128,128); p+=128;
-            packed[p++]=2; memcpy(packed+p,raw+256,3); p+=3;
+            packed[p++]=4; memcpy(packed+p,raw+256,5); p+=5;
             assert(fputc((int)(p>>8),vf)!=EOF); assert(fputc((int)(p&255),vf)!=EOF);
             assert(fwrite(packed,1,p,vf)==p);
-            assert(p==262);
+            assert(p==264);
         }
         assert(fclose(vf)==0);
         at_terrain_free(&b);
