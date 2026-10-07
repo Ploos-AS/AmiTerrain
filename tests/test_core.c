@@ -226,6 +226,7 @@ int main(void)
         assert(at_write_atf("test-usgs-utm.atf",&b)==0); assert(at_read_atf("test-usgs-utm.atf",&rr)==0);
         assert(rr.geo.epsg==26910 && rr.geo.projection_system==1 && rr.geo.projection_zone==10 && rr.geo.horizontal_datum==4);
         assert(rr.geo.transform[0]==500000.0 && rr.geo.transform[3]==4200040.0);
+        { FILE *af=fopen("test-usgs-utm.atf","rb"); unsigned char buf[512]; size_t an; int saw_geo=0,saw_crs=0; assert(af); an=fread(buf,1,sizeof(buf),af); fclose(af); for(y=0;y+4<=an;++y) { if(!memcmp(buf+y,"GEO ",4)) saw_geo=1; if(!memcmp(buf+y,"CRS ",4)) saw_crs=1; } assert(!saw_geo && saw_crs); }
         at_terrain_free(&rr);
     }
 
