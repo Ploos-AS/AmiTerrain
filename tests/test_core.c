@@ -204,6 +204,22 @@ int main(void)
         assert(b.samples[0]==(uint16_t)(4+32768) && b.samples[2]==32768); /* z resolution 2 */
     }
 
+    /* SRTM/HGT is square signed 16-bit big-endian; -32768 is void. */
+    {
+        FILE *hf=fopen("N58E007.hgt","wb"); unsigned char hgt[]={
+            0x00,0x64, 0x7f,0xff, 0x80,0x00,
+            0xff,0xff, 0x00,0x00, 0x00,0x01,
+            0x00,0x02, 0x00,0x03, 0x00,0x04
+        };
+        assert(hf!=NULL); assert(fwrite(hgt,1,sizeof(hgt),hf)==sizeof(hgt)); assert(fclose(hf)==0);
+        at_terrain_free(&b); assert(at_read_srtm_hgt("N58E007.hgt",&b)==0);
+        assert(b.width==3 && b.height==3);
+        assert(b.samples[0]==(uint16_t)(32768+100));
+        assert(b.samples[1]==65535);
+        assert(b.samples[2]==0);
+        assert(b.samples[3]==32767 && b.samples[4]==32768 && b.samples[8]==32772);
+    }
+
     /* USGS documented void elevation -32767 maps to canonical missing sample 0. */
     {
         FILE *uf=fopen("test-usgs-void.dem","wb"); char a[1024],br[1024],tmp[64];
