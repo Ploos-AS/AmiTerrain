@@ -174,6 +174,8 @@ Current ILBM reader support:
 - optional mask plane
 - unknown IFF chunks skipped using normal chunk/padding rules
 - planar pixel values scaled deterministically to canonical 16-bit samples
+- `CMAP` is display metadata: the planar pixel index is the height value; coloured palettes are not silently converted to luminance
+- `CAMG` HAM and EHB display modes are rejected because their colour semantics do not represent a linear height index
 
 Current writer contract:
 
