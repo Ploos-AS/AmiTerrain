@@ -425,6 +425,20 @@ int main(void)
         at_terrain_free(&q); at_terrain_free(&r);
     }
 
+    /* ILBM writer emits a standard 256-entry grayscale CMAP. */
+    {
+        ATTerrain q={0}; FILE *xf; unsigned char buf[820]; size_t n,i,off=(size_t)-1;
+        assert(at_terrain_init(&q,1,1)==0); q.samples[0]=32768;
+        assert(at_write_ilbm_heightmap("test-ilbm-cmap.ilbm",&q)==0); at_terrain_free(&q);
+        xf=fopen("test-ilbm-cmap.ilbm","rb"); assert(xf!=NULL); n=fread(buf,1,sizeof(buf),xf); fclose(xf);
+        for(i=0;i+8<n;++i) if(!memcmp(buf+i,"CMAP",4)){ off=i; break; }
+        assert(off!=(size_t)-1 && off+8U+768U<=n);
+        assert(buf[off+4]==0 && buf[off+5]==0 && buf[off+6]==3 && buf[off+7]==0);
+        assert(buf[off+8]==0 && buf[off+9]==0 && buf[off+10]==0);
+        assert(buf[off+8+3*127]==127 && buf[off+8+3*127+1]==127 && buf[off+8+3*127+2]==127);
+        assert(buf[off+8+3*255]==255 && buf[off+8+3*255+1]==255 && buf[off+8+3*255+2]==255);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
