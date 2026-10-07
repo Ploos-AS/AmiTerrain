@@ -67,3 +67,16 @@ The affine transform maps raster coordinates to world coordinates:
 `Y = T3 + column*T4 + row*T5`
 
 All numeric values use big-endian byte order. `GEO ` remains the compatibility representation for geographic north-up rasters; writers currently emit both chunks when geographic metadata is available.
+
+## Canonical height samples and missing data
+
+The M0 terrain core stores one unsigned 16-bit sample per cell. Signed integer elevations are represented with a +32768 offset when imported into this canonical form.
+
+Sample value **0 is reserved for missing/void terrain data**. Importers must translate a source format's documented missing-data sentinel to 0 rather than treating it as a real elevation. Consequently, signed elevation -32768 is not representable as an ordinary canonical terrain height in M0.
+
+Current mappings include:
+
+- DTED signed-magnitude void value -32767 -> 0
+- USGS DEM documented void elevation -32767 -> 0
+
+Writers and processing stages must preserve sample 0 as missing data unless an operation explicitly fills or repairs voids. This convention is part of the M0 interchange contract and applies equally to ATF HMAP samples.
