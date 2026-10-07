@@ -395,3 +395,24 @@ int at_read_usgs_dem(const char *path, ATTerrain *t)
 fail:
     at_terrain_free(t); fclose(f); return -1;
 }
+
+
+int at_read_srtm_hgt(const char *path, ATTerrain *t)
+{
+    FILE *f; long bytes; uint32_t side=0,x,y; unsigned char b[2];
+    if(!path||!t) return -1;
+    f=fopen(path,"rb"); if(!f) return -1;
+    if(fseek(f,0,SEEK_END) || (bytes=ftell(f))<=0 || (bytes&1L) || fseek(f,0,SEEK_SET)) { fclose(f); return -1; }
+    while((uint64_t)(side+1U)*(uint64_t)(side+1U)*2U <= (uint64_t)bytes) ++side;
+    if((uint64_t)side*(uint64_t)side*2U != (uint64_t)bytes || side<2U) { fclose(f); return -1; }
+    if(at_terrain_init(t,side,side)) { fclose(f); return -1; }
+    for(y=0;y<side;++y) for(x=0;x<side;++x) {
+        int16_t elev;
+        if(fread(b,1,2,f)!=2) goto fail_hgt;
+        elev=(int16_t)(((uint16_t)b[0]<<8)|(uint16_t)b[1]);
+        t->samples[(size_t)y*side+x]=(elev==(int16_t)-32768) ? 0U : (uint16_t)((int32_t)elev+32768);
+    }
+    fclose(f); return 0;
+fail_hgt:
+    at_terrain_free(t); fclose(f); return -1;
+}
