@@ -477,6 +477,31 @@ int main(void)
         assert(b.width==1 && b.height==1 && b.samples[0]==65535);
     }
 
+    /* ILBM mask plane is display-only: both pixels retain index-derived heights. */
+    {
+        static const unsigned char masked[] = {
+            'F','O','R','M',0,0,0,46,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,2,0,1,0,0,0,0,1,1,0,0,0,0,10,10,0,2,0,1,
+            'B','O','D','Y',0,0,0,4, 0xC0,0, 0x80,0
+        };
+        FILE *xf=fopen("test-ilbm-mask.iff","wb"); assert(xf!=NULL);
+        assert(fwrite(masked,1,sizeof(masked),xf)==sizeof(masked)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-mask.iff",&b)==0);
+        assert(b.width==2 && b.height==1);
+        assert(b.samples[0]==65535 && b.samples[1]==65535);
+    }
+    /* Truncated BODY must fail rather than read outside the available data. */
+    {
+        static const unsigned char truncated[] = {
+            'F','O','R','M',0,0,0,42,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1,
+            'B','O','D','Y',0,0,0,2, 0x80
+        };
+        FILE *xf=fopen("test-ilbm-truncated.iff","wb"); assert(xf!=NULL);
+        assert(fwrite(truncated,1,sizeof(truncated),xf)==sizeof(truncated)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-truncated.iff",&b)!=0);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
