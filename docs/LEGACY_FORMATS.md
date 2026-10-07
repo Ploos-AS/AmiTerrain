@@ -172,6 +172,7 @@ Current ILBM reader support:
 - uncompressed BODY data
 - ByteRun1 compression
 - optional mask plane
+- Mask-plane bits are **display/transparency metadata only** in the default importer: both opaque and transparent pixels retain their planar-index height. No implicit conversion to missing terrain occurs. An explicit mask-to-void option may be introduced separately in a future version.
 - unknown IFF chunks skipped using normal chunk/padding rules
 - planar pixel values scaled deterministically to canonical 16-bit samples
 - `CMAP` is display metadata: the planar pixel index is the height value; coloured palettes are not silently converted to luminance
