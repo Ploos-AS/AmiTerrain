@@ -480,7 +480,7 @@ int main(void)
     /* ILBM mask plane is display-only: both pixels retain index-derived heights. */
     {
         static const unsigned char masked[] = {
-            'F','O','R','M',0,0,0,46,'I','L','B','M',
+            'F','O','R','M',0,0,0,44,'I','L','B','M',
             'B','M','H','D',0,0,0,20, 0,2,0,1,0,0,0,0,1,1,0,0,0,0,10,10,0,2,0,1,
             'B','O','D','Y',0,0,0,4, 0xC0,0, 0x80,0
         };
