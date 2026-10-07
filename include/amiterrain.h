@@ -65,6 +65,7 @@ int at_read_usgs_dem(const char *path, ATTerrain *terrain);
 int at_read_srtm_hgt(const char *path, ATTerrain *terrain);
 int at_read_esri_ascii_grid(const char *path, ATTerrain *terrain);
 int at_read_xyz_grid(const char *path, ATTerrain *terrain);
+int at_read_ilbm_heightmap(const char *path, ATTerrain *terrain);
 int at_read_wcs_elev(const char *path, ATTerrain *terrain);
 int at_write_wcs_elev(const char *path, const ATTerrain *terrain);
 
