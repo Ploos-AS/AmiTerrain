@@ -40,4 +40,9 @@ jobs:
           ./amiterrain validate N58E007.hgt
           ./amiterrain convert N58E007.hgt from-hgt.atf
           ./amiterrain validate from-hgt.atf
+          printf 'ncols 3\nnrows 2\nxllcorner 100\nyllcorner 200\ncellsize 10\nNODATA_value -9999\n1 2 -9999\n-1 0 3\n' > terrain.asc
+          ./amiterrain info terrain.asc
+          ./amiterrain validate terrain.asc
+          ./amiterrain convert terrain.asc from-asc.atf
+          ./amiterrain validate from-asc.atf
           test "$(./amiterrain info N58E007.hgt | sed 's/.*checksum=//' | cut -d' ' -f1)" = "$(./amiterrain info from-hgt.atf | sed 's/.*checksum=//' | cut -d' ' -f1)"
