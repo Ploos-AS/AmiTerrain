@@ -439,6 +439,30 @@ int main(void)
         assert(buf[off+8+3*255]==255 && buf[off+8+3*255+1]==255 && buf[off+8+3*255+2]==255);
     }
 
+    /* CAMG HAM/EHB display modes are not silently treated as linear heights. */
+    {
+        static const unsigned char ham[] = {
+            'F','O','R','M',0,0,0,54,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1,
+            'C','A','M','G',0,0,0,4, 0,0,8,0,
+            'B','O','D','Y',0,0,0,2, 0,0
+        };
+        FILE *xf=fopen("test-ilbm-ham.iff","wb"); assert(xf!=NULL);
+        assert(fwrite(ham,1,sizeof(ham),xf)==sizeof(ham)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-ham.iff",&b)!=0);
+    }
+    {
+        static const unsigned char ehb[] = {
+            'F','O','R','M',0,0,0,54,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1,
+            'C','A','M','G',0,0,0,4, 0,0,0,128,
+            'B','O','D','Y',0,0,0,2, 0,0
+        };
+        FILE *xf=fopen("test-ilbm-ehb.iff","wb"); assert(xf!=NULL);
+        assert(fwrite(ehb,1,sizeof(ehb),xf)==sizeof(ehb)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-ehb.iff",&b)!=0);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
