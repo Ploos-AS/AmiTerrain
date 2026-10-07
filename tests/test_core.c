@@ -502,6 +502,39 @@ int main(void)
         at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-truncated.iff",&b)!=0);
     }
 
+    /* Malformed IFF chunk: odd payload without mandatory pad byte. */
+    {
+        static const unsigned char badpad[] = {
+            'F','O','R','M',0,0,0,45,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1,
+            'J','U','N','K',0,0,0,1, 42,
+            'B','O','D','Y',0,0,0,2, 0x80,0
+        };
+        FILE *xf=fopen("test-ilbm-badpad.iff","wb"); assert(xf);
+        assert(fwrite(badpad,1,sizeof(badpad),xf)==sizeof(badpad)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-badpad.iff",&b)!=0);
+    }
+    /* ByteRun1 repeat command with missing repeated byte must fail. */
+    {
+        static const unsigned char badrle[] = {
+            'F','O','R','M',0,0,0,42,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,1,0,0,0,10,10,0,1,0,1,
+            'B','O','D','Y',0,0,0,2, 0xff
+        };
+        FILE *xf=fopen("test-ilbm-badrle.iff","wb"); assert(xf);
+        assert(fwrite(badrle,1,sizeof(badrle),xf)==sizeof(badrle)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-badrle.iff",&b)!=0);
+    }
+    /* Declared FORM length cannot end halfway through a chunk header. */
+    {
+        static const unsigned char partial[] = {
+            'F','O','R','M',0,0,0,7,'I','L','B','M', 'B','M','H'
+        };
+        FILE *xf=fopen("test-ilbm-partial-form.iff","wb"); assert(xf);
+        assert(fwrite(partial,1,sizeof(partial),xf)==sizeof(partial)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-partial-form.iff",&b)!=0);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
