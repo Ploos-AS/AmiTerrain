@@ -399,6 +399,20 @@ int main(void)
         assert(b.samples[0]==65535 && b.samples[1]==0 && b.samples[2]==65535 && b.samples[3]==0);
     }
 
+    /* 8-plane ILBM reconstructs the classic Amiga planar pixel value. */
+    {
+        unsigned char raw[12+8+20+8+16]; size_t o=0,p;
+        memcpy(raw+o,"FORM",4); o+=4; raw[o++]=0;raw[o++]=0;raw[o++]=0;raw[o++]=48;
+        memcpy(raw+o,"ILBM",4); o+=4; memcpy(raw+o,"BMHD",4); o+=4;
+        raw[o++]=0;raw[o++]=0;raw[o++]=0;raw[o++]=20;
+        { unsigned char bh[20]={0,1,0,1,0,0,0,0,8,0,0,0,0,0,10,10,0,1,0,1}; memcpy(raw+o,bh,20); o+=20; }
+        memcpy(raw+o,"BODY",4); o+=4; raw[o++]=0;raw[o++]=0;raw[o++]=0;raw[o++]=16;
+        for(p=0;p<8;++p){ raw[o++]=(0xA5U&(1U<<p))?0x80:0; raw[o++]=0; }
+        { FILE *xf=fopen("test-ilbm-8bit.ilbm","wb"); assert(xf!=NULL); assert(fwrite(raw,1,o,xf)==o); assert(fclose(xf)==0); }
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-8bit.ilbm",&b)==0);
+        assert(b.width==1 && b.height==1 && b.samples[0]==(uint16_t)(0xA5U*257U));
+    }
+
     puts("core tests: PASS");
     return 0;
 }
