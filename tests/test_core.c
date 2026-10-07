@@ -210,8 +210,9 @@ int main(void)
         assert(uf!=NULL); memset(a,' ',sizeof(a));
         memcpy(a+156,"     1",6); /* UTM */ memcpy(a+162,"    10",6); /* zone 10 */
         memcpy(a+528,"     2",6); /* metres */ memcpy(a+890," 4",2); /* NAD83 */
-        snprintf(tmp,sizeof(tmp),"%24s","1.000000000000000D+01"); memcpy(a+816,tmp,24);
-        snprintf(tmp,sizeof(tmp),"%24s","2.000000000000000D+01"); memcpy(a+840,tmp,24);
+        snprintf(tmp,sizeof(tmp),"%12.6E",10.0); memcpy(a+816,tmp,12);
+        snprintf(tmp,sizeof(tmp),"%12.6E",20.0); memcpy(a+828,tmp,12);
+        snprintf(tmp,sizeof(tmp),"%12.6E",1.0); memcpy(a+840,tmp,12);
         memcpy(a+852,"     1",6); memcpy(a+858,"     1",6);
         assert(fwrite(a,1,sizeof(a),uf)==sizeof(a)); memset(br,' ',sizeof(br));
         memcpy(br,"     1",6); memcpy(br+6,"     1",6); memcpy(br+12,"     3",6); memcpy(br+18,"     1",6);
