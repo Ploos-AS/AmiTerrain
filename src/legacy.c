@@ -167,7 +167,7 @@ int at_write_wcs_elev(const char *path, const ATTerrain *t)
 
 int at_read_vistapro_dem(const char *path, ATTerrain *t)
 {
-    FILE *f; unsigned char hdr[144], *packed=0, *tmp=0; uint32_t compression,w,h,row; size_t cap; int fail_stage=0;
+    FILE *f; unsigned char hdr[144], *packed=0, *tmp=0; uint32_t compression,w,h,row; size_t cap;
     if(!path || !t) return -1;
     f=fopen(path,"rb"); if(!f) return -1;
     if(fread(hdr,1,sizeof(hdr),f)!=sizeof(hdr) || memcmp(hdr,"Vista DEM File",14)) { fclose(f); return -1; }
@@ -179,8 +179,8 @@ int at_read_vistapro_dem(const char *path, ATTerrain *t)
     if(!packed || !tmp || fseek(f,2048,SEEK_SET)) goto fail;
     for(row=0;row<h;++row) {
         int a=fgetc(f),b=fgetc(f); size_t count,pi=0,ti=0,x;
-        if(a==EOF||b==EOF) { fail_stage=1; goto fail; } count=((size_t)a<<8)|(unsigned)b;
-        if(!count || count>cap || fread(packed,1,count,f)!=count) { fail_stage=2; goto fail; }
+        if(a==EOF||b==EOF) goto fail; count=((size_t)a<<8)|(unsigned)b;
+        if(!count || count>cap || fread(packed,1,count,f)!=count) goto fail;
         /* VistaPro stores PackBits/ByteRun1 packets: 0..127 literal, -1..-127 repeat, -128 NOP. */
         while(pi<count) {
             int8_t code=(int8_t)packed[pi++]; size_t n,j;
@@ -196,23 +196,22 @@ int at_read_vistapro_dem(const char *path, ATTerrain *t)
                 ++pi;
             } /* -128 is a no-op */
         }
-        if(ti<2) { fail_stage=3; goto fail; }
+        if(ti<2) goto fail;
         {
             size_t p=2; int32_t elev=(int16_t)(((uint16_t)tmp[0]<<8)|tmp[1]);
             uint16_t *dst=t->samples+(size_t)(h-1U-row)*w;
             dst[0]=(uint16_t)(elev+32768);
             for(x=1;x<w;++x) {
-                int8_t d; if(p>=ti) { fail_stage=4; goto fail; } d=(int8_t)tmp[p++];
-                if(d==-128) { if(p+1>=ti) { fail_stage=5; goto fail; } elev=(int16_t)(((uint16_t)tmp[p]<<8)|tmp[p+1]); p+=2; }
+                int8_t d; if(p>=ti) goto fail; d=(int8_t)tmp[p++];
+                if(d==-128) { if(p+1>=ti) goto fail; elev=(int16_t)(((uint16_t)tmp[p]<<8)|tmp[p+1]); p+=2; }
                 else elev+=d;
-                if(elev<-32768 || elev>32767) { fail_stage=6; goto fail; }
+                if(elev<-32768 || elev>32767) goto fail;
                 dst[x]=(uint16_t)(elev+32768);
             }
         }
     }
     free(tmp); free(packed); fclose(f); return 0;
 fail:
-    fprintf(stderr,"VistaPro decode failure stage=%d row=%u\\n",fail_stage,(unsigned)row);
     free(tmp); free(packed); at_terrain_free(t); fclose(f); return -1;
 }
 
