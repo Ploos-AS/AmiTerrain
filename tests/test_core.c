@@ -204,6 +204,34 @@ int main(void)
         assert(b.samples[0]==(uint16_t)(4+32768) && b.samples[2]==32768); /* z resolution 2 */
     }
 
+    /* ESRI ASCII Grid: corner origin, nodata and north/top-first affine transform. */
+    {
+        FILE *af=fopen("test-grid.asc","w");
+        assert(af!=NULL);
+        fputs("ncols 3\nnrows 2\nxllcorner 100\nyllcorner 200\ncellsize 10\nNODATA_value -9999\n"
+              "1 2 -9999\n-1 0 3\n",af);
+        assert(fclose(af)==0);
+        at_terrain_free(&b); assert(at_read_esri_ascii_grid("test-grid.asc",&b)==0);
+        assert(b.width==3 && b.height==2);
+        assert(b.samples[0]==32769 && b.samples[1]==32770 && b.samples[2]==0);
+        assert(b.samples[3]==32767 && b.samples[4]==32768 && b.samples[5]==32771);
+        assert(b.geo.valid && b.geo.crs_type==AT_CRS_UNKNOWN);
+        assert(b.geo.transform[0]==105.0 && b.geo.transform[1]==10.0);
+        assert(b.geo.transform[3]==215.0 && b.geo.transform[5]==-10.0);
+    }
+
+    /* ESRI ASCII Grid center origin must not receive the half-cell offset. */
+    {
+        FILE *af=fopen("test-grid-center.asc","w");
+        assert(af!=NULL);
+        fputs("ncols 2\nnrows 2\nxllcenter 7.5\nyllcenter 58.5\ncellsize 0.5\nNODATA_value -9999\n"
+              "10 11\n12 13\n",af);
+        assert(fclose(af)==0);
+        at_terrain_free(&b); assert(at_read_esri_ascii_grid("test-grid-center.asc",&b)==0);
+        assert(b.geo.transform[0]==7.5 && b.geo.transform[1]==0.5);
+        assert(b.geo.transform[3]==59.0 && b.geo.transform[5]==-0.5);
+    }
+
     /* SRTM/HGT is square signed 16-bit big-endian; -32768 is void. */
     {
         FILE *hf=fopen("N58E007.hgt","wb"); unsigned char hgt[]={
