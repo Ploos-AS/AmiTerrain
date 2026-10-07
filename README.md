@@ -47,14 +47,16 @@ Rendering, erosion, GIS import and GUI are intentionally deferred until the core
 - PGM
 - native IFF terrain container
 
-### Later
-- ILBM/IFF
-- PNG 16-bit grayscale
+### Implemented interchange
+- IFF/ILBM heightmaps (1–8 plane import; 8-plane grayscale export)
 - ASCII Grid / ASC
-- XYZ
+- XYZ regular grids
 - HGT / SRTM
 - USGS DEM
 - DTED
+
+### Later
+- PNG 16-bit grayscale
 - GeoTIFF
 - OBJ / PLY / STL
 - LightWave / Imagine / POV-Ray interchange
