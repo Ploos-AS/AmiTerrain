@@ -50,4 +50,9 @@ jobs:
           ./amiterrain validate terrain.xyz
           ./amiterrain convert terrain.xyz from-xyz.atf
           ./amiterrain validate from-xyz.atf
+          ./amiterrain generate 17 9 123 terrain.ilbm
+          ./amiterrain info terrain.ilbm
+          ./amiterrain validate terrain.ilbm
+          ./amiterrain convert terrain.ilbm from-ilbm.atf
+          ./amiterrain validate from-ilbm.atf
           test "$(./amiterrain info N58E007.hgt | sed 's/.*checksum=//' | cut -d' ' -f1)" = "$(./amiterrain info from-hgt.atf | sed 's/.*checksum=//' | cut -d' ' -f1)"
