@@ -412,6 +412,26 @@ int at_read_srtm_hgt(const char *path, ATTerrain *t)
         elev=(int16_t)(((uint16_t)b[0]<<8)|(uint16_t)b[1]);
         t->samples[(size_t)y*side+x]=(elev==(int16_t)-32768) ? 0U : (uint16_t)((int32_t)elev+32768);
     }
+    {
+        const char *name=strrchr(path,'/'); int ns,ew,lat,lon; double step;
+        name=name ? name+1 : path;
+        if((name[0]=='N'||name[0]=='S') && (name[3]=='E'||name[3]=='W') &&
+           name[1]>='0'&&name[1]<='9' && name[2]>='0'&&name[2]<='9' &&
+           name[4]>='0'&&name[4]<='9' && name[5]>='0'&&name[5]<='9' &&
+           name[6]>='0'&&name[6]<='9') {
+            ns=(name[0]=='N')?1:-1; ew=(name[3]=='E')?1:-1;
+            lat=(name[1]-'0')*10+(name[2]-'0');
+            lon=(name[4]-'0')*100+(name[5]-'0')*10+(name[6]-'0');
+            step=1.0/(double)(side-1U);
+            t->geo.valid=1; t->geo.crs_type=AT_CRS_GEOGRAPHIC;
+            t->geo.coordinate_units=AT_COORD_UNITS_DEGREES;
+            t->geo.origin_lat=(double)(ns*lat)+1.0;
+            t->geo.origin_lon=(double)(ew*lon);
+            t->geo.step_lat=-step; t->geo.step_lon=step; t->geo.elevation_scale=1.0;
+            t->geo.transform[0]=t->geo.origin_lon; t->geo.transform[1]=step;
+            t->geo.transform[3]=t->geo.origin_lat; t->geo.transform[5]=-step;
+        }
+    }
     fclose(f); return 0;
 fail_hgt:
     at_terrain_free(t); fclose(f); return -1;
