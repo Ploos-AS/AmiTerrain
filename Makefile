@@ -2,7 +2,7 @@ CC ?= cc
 CFLAGS ?= -O2 -Wall -Wextra -std=c99
 CPPFLAGS ?= -Iinclude
 
-LIBSRC = src/terrain.c src/io.c src/atf.c src/legacy.c
+LIBSRC = src/terrain.c src/io.c src/atf.c src/legacy.c src/ilbm.c
 
 all: amiterrain
 
