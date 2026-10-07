@@ -368,7 +368,7 @@ int at_read_usgs_dem(const char *path, ATTerrain *t)
                 if(ze < -32768.0 || ze > 32767.0) goto fail;
                 elev=(int32_t)(ze < 0.0 ? ze-0.5 : ze+0.5);
             }
-            t->samples[(size_t)(t->height-1U-y)*t->width+x]=(uint16_t)(elev+32768);
+            t->samples[(size_t)(t->height-1U-y)*t->width+x]=(elev==-32767) ? 0U : (uint16_t)(elev+32768);
         }
         /* B profiles are padded to a 1024-byte logical-record boundary and may
            span any number of records; elevation fields remain contiguous. */
