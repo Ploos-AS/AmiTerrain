@@ -14,7 +14,7 @@ static void usage(void)
     puts("  amiterrain convert INPUT OUTPUT");
     puts("  amiterrain convert --input-format FORMAT [--width W --height H] INPUT");
     puts("                     --output-format FORMAT OUTPUT");
-    puts("formats: pgm, atf, raw16be, vista-array, vistapro-dem, wcs-elev, dted, usgs-dem");
+    puts("formats: pgm, atf, raw16be, vista-array, vistapro-dem, wcs-elev, dted, usgs-dem, hgt");
     puts("note: raw16be and vista-array input require --width and --height");
     puts("      .dem is never auto-detected because legacy DEM formats are ambiguous");
 }
@@ -31,6 +31,7 @@ static const char *infer_format(const char *path)
     if (suffix(path,".pgm")) return "pgm";
     if (suffix(path,".raw")) return "raw16be";
     if (suffix(path,".elev")) return "wcs-elev";
+    if (suffix(path,".hgt") || suffix(path,".HGT")) return "hgt";
     return 0;
 }
 
@@ -44,6 +45,7 @@ static int load_as(const char *fmt, const char *path, uint32_t w, uint32_t h, AT
     if (!strcmp(fmt,"vistapro-dem")) return at_read_vistapro_dem(path,t);
     if (!strcmp(fmt,"dted")) return at_read_dted(path,t);
     if (!strcmp(fmt,"usgs-dem")) return at_read_usgs_dem(path,t);
+    if (!strcmp(fmt,"hgt")) return at_read_srtm_hgt(path,t);
     if (!strcmp(fmt,"raw16be")) return w && h ? at_read_raw16be(path,w,h,t) : -1;
     if (!strcmp(fmt,"vista-array")) return w && h ? at_read_vistapro_binary(path,w,h,t) : -1;
     return -1;
