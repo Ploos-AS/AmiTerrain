@@ -463,6 +463,20 @@ int main(void)
         at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-ehb.iff",&b)!=0);
     }
 
+    /* CMAP is display metadata: planar pixel index remains the height value. */
+    {
+        static const unsigned char pal[] = {
+            'F','O','R','M',0,0,0,56,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1,
+            'C','M','A','P',0,0,0,6, 255,0,0, 0,255,0,
+            'B','O','D','Y',0,0,0,2, 0x80,0
+        };
+        FILE *xf=fopen("test-ilbm-colour-cmap.iff","wb"); assert(xf!=NULL);
+        assert(fwrite(pal,1,sizeof(pal),xf)==sizeof(pal)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-colour-cmap.iff",&b)==0);
+        assert(b.width==1 && b.height==1 && b.samples[0]==65535);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
