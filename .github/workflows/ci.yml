@@ -30,3 +30,14 @@ jobs:
           ./amiterrain convert --input-format pgm terrain.pgm --output-format vista-array terrain.dem
           ./amiterrain convert --input-format vista-array --width 64 --height 64 terrain.dem --output-format atf from-vista.atf
           ./amiterrain validate from-vista.atf
+          python3 - <<'PY'
+          import struct
+          vals=[100,101,-32768,102,103,104,105,106,107]
+          with open("N58E007.hgt","wb") as f:
+              f.write(struct.pack(">9h",*vals))
+          PY
+          ./amiterrain info N58E007.hgt
+          ./amiterrain validate N58E007.hgt
+          ./amiterrain convert N58E007.hgt from-hgt.atf
+          ./amiterrain validate from-hgt.atf
+          test "$(./amiterrain info N58E007.hgt | sed 's/.*checksum=//' | cut -d' ' -f1)" = "$(./amiterrain info from-hgt.atf | sed 's/.*checksum=//' | cut -d' ' -f1)"
