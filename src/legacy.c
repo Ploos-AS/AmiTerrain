@@ -436,3 +436,44 @@ int at_read_srtm_hgt(const char *path, ATTerrain *t)
 fail_hgt:
     at_terrain_free(t); fclose(f); return -1;
 }
+
+
+int at_read_esri_ascii_grid(const char *path, ATTerrain *t)
+{
+    FILE *f; char key[32]; uint32_t cols=0,rows=0,x,y; double xll=0.0,yll=0.0,cell=0.0,nodata=-9999.0; int xcenter=0,ycenter=0,have_nodata=0,i;
+    if(!path||!t) return -1; f=fopen(path,"r"); if(!f) return -1;
+    for(i=0;i<6;++i) {
+        double v;
+        if(fscanf(f,"%31s %lf",key,&v)!=2) { fclose(f); return -1; }
+        if(!strcmp(key,"ncols")||!strcmp(key,"NCOLS")) cols=(uint32_t)v;
+        else if(!strcmp(key,"nrows")||!strcmp(key,"NROWS")) rows=(uint32_t)v;
+        else if(!strcmp(key,"xllcorner")||!strcmp(key,"XLLCORNER")) xll=v;
+        else if(!strcmp(key,"yllcorner")||!strcmp(key,"YLLCORNER")) yll=v;
+        else if(!strcmp(key,"xllcenter")||!strcmp(key,"XLLCENTER")) { xll=v; xcenter=1; }
+        else if(!strcmp(key,"yllcenter")||!strcmp(key,"YLLCENTER")) { yll=v; ycenter=1; }
+        else if(!strcmp(key,"cellsize")||!strcmp(key,"CELLSIZE")) cell=v;
+        else if(!strcmp(key,"NODATA_value")||!strcmp(key,"nodata_value")) { nodata=v; have_nodata=1; }
+        else { fclose(f); return -1; }
+    }
+    if(!cols||!rows||cell<=0.0) { fclose(f); return -1; }
+    if(at_terrain_init(t,cols,rows)) { fclose(f); return -1; }
+    for(y=0;y<rows;++y) for(x=0;x<cols;++x) {
+        double v; int32_t elev;
+        if(fscanf(f,"%lf",&v)!=1) goto fail_asc;
+        if(have_nodata && v==nodata) t->samples[(size_t)y*cols+x]=0;
+        else {
+            if(v < -32767.0 || v > 32767.0) goto fail_asc;
+            elev=(int32_t)(v<0.0 ? v-0.5 : v+0.5);
+            t->samples[(size_t)y*cols+x]=(uint16_t)(elev+32768);
+        }
+    }
+    t->geo.valid=1; t->geo.crs_type=AT_CRS_UNKNOWN; t->geo.coordinate_units=AT_COORD_UNITS_UNKNOWN;
+    t->geo.elevation_scale=1.0;
+    t->geo.transform[0]=xll+(xcenter?0.0:cell*0.5);
+    t->geo.transform[1]=cell;
+    t->geo.transform[3]=yll+(ycenter?0.0:cell*0.5)+(double)(rows-1U)*cell;
+    t->geo.transform[5]=-cell;
+    fclose(f); return 0;
+fail_asc:
+    at_terrain_free(t); fclose(f); return -1;
+}
