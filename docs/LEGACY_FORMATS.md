@@ -116,6 +116,24 @@ The same codec is intended for DTED Level 0, 1 and 2 (`.dt0`, `.dt1`, `.dt2`) be
 
 Status remains **Experimental** until qualification against independent real-world DTED files.
 
+## SRTM / HGT — Experimental
+
+Priority: **P1**.
+
+AmiTerrain implements SRTM-style HGT import through the CLI format `hgt`, with automatic detection for `.hgt` and `.HGT`.
+
+Current regression coverage includes:
+
+- square raster dimensions inferred from file size
+- signed 16-bit big-endian elevation samples
+- source void value `-32768` mapped to AmiTerrain canonical missing sample `0`
+- north/top-first raster ordering
+- standard tile-name georeferencing such as `N58E007.hgt`
+- one-degree tile affine transform with spacing `1/(N-1)`
+- HGT -> ATF CLI conversion and checksum preservation
+
+Status remains **Experimental** until the reader is qualified against independent real SRTM tiles and malformed/truncated real-world cases.
+
 ## Scenery Animator
 
 Priority: **P0 research / P1 implementation**.
