@@ -413,6 +413,18 @@ int main(void)
         assert(b.width==1 && b.height==1 && b.samples[0]==(uint16_t)(0xA5U*257U));
     }
 
+    /* ILBM writer round-trip is exact at the 8-bit interchange precision. */
+    {
+        ATTerrain q={0},r={0}; uint32_t i; static const unsigned char values[]={0,1,2,127,128,254,255};
+        assert(at_terrain_init(&q,(uint32_t)sizeof(values),1)==0);
+        for(i=0;i<(uint32_t)sizeof(values);++i) q.samples[i]=(uint16_t)((uint16_t)values[i]*257U);
+        assert(at_write_ilbm_heightmap("test-ilbm-roundtrip.ilbm",&q)==0);
+        assert(at_read_ilbm_heightmap("test-ilbm-roundtrip.ilbm",&r)==0);
+        assert(r.width==q.width && r.height==q.height);
+        for(i=0;i<(uint32_t)sizeof(values);++i) assert(r.samples[i]==q.samples[i]);
+        at_terrain_free(&q); at_terrain_free(&r);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
