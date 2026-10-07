@@ -477,3 +477,40 @@ int at_read_esri_ascii_grid(const char *path, ATTerrain *t)
 fail_asc:
     at_terrain_free(t); fclose(f); return -1;
 }
+
+
+int at_read_xyz_grid(const char *path, ATTerrain *t)
+{
+    FILE *f; double x,y,z,first_x=0.0,first_y=0.0,prev_x=0.0,dx=0.0,dy=0.0; size_t count=0,cap=0; double *v=0; uint32_t cols=0,rows,i,j;
+    if(!path||!t) return -1; f=fopen(path,"r"); if(!f) return -1;
+    while(fscanf(f,"%lf %lf %lf",&x,&y,&z)==3) {
+        double *nv;
+        if(count==cap) { size_t nc=cap?cap*2U:256U; nv=(double*)realloc(v,nc*3U*sizeof(double)); if(!nv) { free(v); fclose(f); return -1; } v=nv; cap=nc; }
+        v[count*3U]=x; v[count*3U+1U]=y; v[count*3U+2U]=z;
+        if(count==0) { first_x=x; first_y=y; }
+        else if(cols==0 && y!=first_y) cols=(uint32_t)count;
+        prev_x=x; ++count;
+    }
+    (void)prev_x; fclose(f);
+    if(!count) { free(v); return -1; }
+    if(cols==0) cols=(uint32_t)count;
+    if(!cols || count%cols) { free(v); return -1; }
+    rows=(uint32_t)(count/cols); if(!rows) { free(v); return -1; }
+    if(cols>1) dx=v[3]-v[0]; else dx=0.0;
+    if(rows>1) dy=v[(size_t)cols*3U+1U]-v[1]; else dy=0.0;
+    for(j=0;j<rows;++j) for(i=0;i<cols;++i) {
+        size_t k=(size_t)j*cols+i;
+        double ex=first_x+(double)i*dx, ey=first_y+(double)j*dy;
+        if(v[k*3U]!=ex || v[k*3U+1U]!=ey) { free(v); return -1; }
+    }
+    if(at_terrain_init(t,cols,rows)) { free(v); return -1; }
+    for(j=0;j<rows;++j) for(i=0;i<cols;++i) {
+        size_t k=(size_t)j*cols+i; double ze=v[k*3U+2U]; int32_t elev;
+        if(ze < -32767.0 || ze > 32767.0) { at_terrain_free(t); free(v); return -1; }
+        elev=(int32_t)(ze<0.0 ? ze-0.5 : ze+0.5);
+        t->samples[k]=(uint16_t)(elev+32768);
+    }
+    t->geo.valid=1; t->geo.crs_type=AT_CRS_UNKNOWN; t->geo.coordinate_units=AT_COORD_UNITS_UNKNOWN; t->geo.elevation_scale=1.0;
+    t->geo.transform[0]=first_x; t->geo.transform[1]=dx; t->geo.transform[3]=first_y; t->geo.transform[5]=dy;
+    free(v); return 0;
+}
