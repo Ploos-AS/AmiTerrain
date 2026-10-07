@@ -204,6 +204,29 @@ int main(void)
         assert(b.samples[0]==(uint16_t)(4+32768) && b.samples[2]==32768); /* z resolution 2 */
     }
 
+    /* Regular XYZ grid: preserve X/Y spacing and signed elevations. */
+    {
+        FILE *xf=fopen("test-grid.xyz","w");
+        assert(xf!=NULL);
+        fputs("7 59 10\n7.5 59 11\n8 59 12\n7 58.5 -1\n7.5 58.5 0\n8 58.5 1\n",xf);
+        assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_xyz_grid("test-grid.xyz",&b)==0);
+        assert(b.width==3 && b.height==2);
+        assert(b.samples[0]==32778 && b.samples[3]==32767 && b.samples[5]==32769);
+        assert(b.geo.valid && b.geo.crs_type==AT_CRS_UNKNOWN);
+        assert(b.geo.transform[0]==7.0 && b.geo.transform[1]==0.5);
+        assert(b.geo.transform[3]==59.0 && b.geo.transform[5]==-0.5);
+    }
+
+    /* Irregular XYZ input is not silently interpolated. */
+    {
+        FILE *xf=fopen("test-grid-irregular.xyz","w");
+        assert(xf!=NULL);
+        fputs("0 1 1\n1 1 2\n0 0 3\n1.25 0 4\n",xf);
+        assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_xyz_grid("test-grid-irregular.xyz",&b)!=0);
+    }
+
     /* ESRI ASCII Grid: corner origin, nodata and north/top-first affine transform. */
     {
         FILE *af=fopen("test-grid.asc","w");
