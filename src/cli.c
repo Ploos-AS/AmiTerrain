@@ -25,6 +25,14 @@ static int suffix(const char *s, const char *ext)
     return a>=b && !strcmp(s+a-b,ext);
 }
 
+static int is_ilbm_file(const char *path)
+{
+    unsigned char h[12]; FILE *f=fopen(path,"rb"); size_t n;
+    if (!f) return 0;
+    n=fread(h,1,sizeof(h),f); fclose(f);
+    return n==sizeof(h) && !memcmp(h,"FORM",4) && !memcmp(h+8,"ILBM",4);
+}
+
 static const char *infer_format(const char *path)
 {
     if (suffix(path,".atf")) return "atf";
@@ -35,6 +43,7 @@ static const char *infer_format(const char *path)
     if (suffix(path,".asc") || suffix(path,".ASC")) return "asc";
     if (suffix(path,".xyz") || suffix(path,".XYZ")) return "xyz";
     if (suffix(path,".ilbm") || suffix(path,".ILBM")) return "ilbm";
+    if ((suffix(path,".iff") || suffix(path,".IFF")) && is_ilbm_file(path)) return "ilbm";
     return 0;
 }
 
