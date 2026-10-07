@@ -158,6 +158,29 @@ Floating-point elevations are currently rounded to the M0 integer canonical heig
 
 Status remains **Experimental** pending qualification against independent real-world grids, additional header-order/case variants, and projection sidecar handling.
 
+## Regular XYZ grid — Experimental
+
+Priority: **P1**.
+
+AmiTerrain implements text XYZ import through the CLI format `xyz`, with automatic detection for `.xyz` and `.XYZ`.
+
+The current contract is deliberately a **regular raster grid represented as X Y Z points**, not an arbitrary point cloud. Rows must have consistent X positions and Y spacing; irregular input is rejected rather than silently interpolated.
+
+Current regression coverage includes:
+
+- automatic row/column discovery
+- positive or negative regular Y spacing
+- signed elevations mapped to the M0 canonical height representation
+- X/Y affine transform reconstruction
+- explicit rejection of irregular point placement
+- XYZ -> ATF CLI conversion
+
+XYZ does not inherently identify its CRS, so CRS type, units and EPSG remain unknown while the numeric affine transform is preserved.
+
+General point-cloud gridding, TIN construction and interpolation belong to a future terrain-processing layer rather than this deterministic interchange reader.
+
+Status remains **Experimental** pending qualification against independent XYZ raster exports and broader numeric-format variants.
+
 ## Scenery Animator
 
 Priority: **P0 research / P1 implementation**.
