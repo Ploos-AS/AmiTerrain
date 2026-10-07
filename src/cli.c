@@ -66,6 +66,7 @@ static int save_as(const char *fmt, const char *path, const ATTerrain *t)
     if (!strcmp(fmt,"raw16be")) return at_write_raw16be(path,t);
     if (!strcmp(fmt,"vista-array")) return at_write_vistapro_binary(path,t);
     if (!strcmp(fmt,"wcs-elev")) return at_write_wcs_elev(path,t);
+    if (!strcmp(fmt,"ilbm")) return at_write_ilbm_heightmap(path,t);
     return -1;
 }
 
