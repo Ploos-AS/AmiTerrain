@@ -45,4 +45,9 @@ jobs:
           ./amiterrain validate terrain.asc
           ./amiterrain convert terrain.asc from-asc.atf
           ./amiterrain validate from-asc.atf
+          printf '7 59 10\n7.5 59 11\n8 59 12\n7 58.5 -1\n7.5 58.5 0\n8 58.5 1\n' > terrain.xyz
+          ./amiterrain info terrain.xyz
+          ./amiterrain validate terrain.xyz
+          ./amiterrain convert terrain.xyz from-xyz.atf
+          ./amiterrain validate from-xyz.atf
           test "$(./amiterrain info N58E007.hgt | sed 's/.*checksum=//' | cut -d' ' -f1)" = "$(./amiterrain info from-hgt.atf | sed 's/.*checksum=//' | cut -d' ' -f1)"
