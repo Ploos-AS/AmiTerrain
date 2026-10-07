@@ -134,6 +134,30 @@ Current regression coverage includes:
 
 Status remains **Experimental** until the reader is qualified against independent real SRTM tiles and malformed/truncated real-world cases.
 
+## ESRI ASCII Grid — Experimental
+
+Priority: **P1**.
+
+AmiTerrain implements ESRI ASCII Grid import through the CLI format `asc`, with automatic detection for `.asc` and `.ASC`.
+
+Current regression and CI coverage includes:
+
+- `ncols` and `nrows`
+- `xllcorner` / `yllcorner`
+- `xllcenter` / `yllcenter`
+- `cellsize`
+- optional `NODATA_value` mapped to AmiTerrain canonical missing sample `0`
+- north/top-first raster ordering
+- half-cell adjustment for corner-referenced grids
+- affine transform preservation through ASC -> ATF conversion
+- positive, zero and negative integer elevations
+
+The grid header provides spatial placement but does not by itself reliably identify a coordinate reference system. AmiTerrain therefore preserves the affine transform while leaving CRS type/units/EPSG unknown unless projection information is supplied by a future sidecar-aware import path.
+
+Floating-point elevations are currently rounded to the M0 integer canonical height representation.
+
+Status remains **Experimental** pending qualification against independent real-world grids, additional header-order/case variants, and projection sidecar handling.
+
 ## Scenery Animator
 
 Priority: **P0 research / P1 implementation**.
