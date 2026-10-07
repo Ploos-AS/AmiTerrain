@@ -158,6 +158,37 @@ Floating-point elevations are currently rounded to the M0 integer canonical heig
 
 Status remains **Experimental** pending qualification against independent real-world grids, additional header-order/case variants, and projection sidecar handling.
 
+## IFF/ILBM heightmaps — Experimental
+
+Priority: **P0 Amiga interchange**.
+
+AmiTerrain reads and writes standard Amiga `FORM ILBM` heightmaps. ILBM is intentionally treated as classic Amiga interchange rather than the lossless native terrain master format; AmiTerrain's `FORM ATFN` container retains the full canonical 16-bit terrain representation and terrain metadata.
+
+Current ILBM reader support:
+
+- standard `BMHD` and `BODY` chunks
+- 1–8 planar bitplanes
+- Amiga word-aligned bitplane rows
+- uncompressed BODY data
+- ByteRun1 compression
+- optional mask plane
+- unknown IFF chunks skipped using normal chunk/padding rules
+- planar pixel values scaled deterministically to canonical 16-bit samples
+
+Current writer contract:
+
+- 8 bitplanes / 256 height levels
+- uncompressed planar BODY
+- standard 256-entry grayscale `CMAP`
+- correct word-aligned rows
+- canonical 16-bit heights deterministically quantized to 8-bit ILBM values
+
+Regression coverage includes raw and ByteRun1 fixtures, 8-plane reconstruction, non-word-sized image widths, exact 8-bit round-trip, CLI conversion, and binary validation of the grayscale palette.
+
+The generic `.iff` suffix is not blindly auto-detected as ILBM because IFF is a container used by many Amiga data types. `.ilbm` is the unambiguous CLI autodetect suffix.
+
+Status remains **Experimental** until qualified against a representative set of independently produced Amiga ILBM files and applications.
+
 ## Regular XYZ grid — Experimental
 
 Priority: **P1**.
