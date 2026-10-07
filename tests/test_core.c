@@ -402,7 +402,7 @@ int main(void)
     /* 8-plane ILBM reconstructs the classic Amiga planar pixel value. */
     {
         unsigned char raw[12+8+20+8+16]; size_t o=0,p;
-        memcpy(raw+o,"FORM",4); o+=4; raw[o++]=0;raw[o++]=0;raw[o++]=0;raw[o++]=48;
+        memcpy(raw+o,"FORM",4); o+=4; raw[o++]=0;raw[o++]=0;raw[o++]=0;raw[o++]=56;
         memcpy(raw+o,"ILBM",4); o+=4; memcpy(raw+o,"BMHD",4); o+=4;
         raw[o++]=0;raw[o++]=0;raw[o++]=0;raw[o++]=20;
         { unsigned char bh[20]={0,1,0,1,0,0,0,0,8,0,0,0,0,0,10,10,0,1,0,1}; memcpy(raw+o,bh,20); o+=20; }
