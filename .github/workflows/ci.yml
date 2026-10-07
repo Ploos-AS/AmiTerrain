@@ -55,4 +55,8 @@ jobs:
           ./amiterrain validate terrain.ilbm
           ./amiterrain convert terrain.ilbm from-ilbm.atf
           ./amiterrain validate from-ilbm.atf
+          cp terrain.ilbm terrain.iff
+          ./amiterrain info terrain.iff
+          printf 'FORM\000\000\000\004TEST' > not-ilbm.iff
+          if ./amiterrain info not-ilbm.iff; then echo 'non-ILBM IFF was incorrectly accepted'; exit 1; fi
           test "$(./amiterrain info N58E007.hgt | sed 's/.*checksum=//' | cut -d' ' -f1)" = "$(./amiterrain info from-hgt.atf | sed 's/.*checksum=//' | cut -d' ' -f1)"
