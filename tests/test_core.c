@@ -204,6 +204,26 @@ int main(void)
         assert(b.samples[0]==(uint16_t)(4+32768) && b.samples[2]==32768); /* z resolution 2 */
     }
 
+    /* USGS documented void elevation -32767 maps to canonical missing sample 0. */
+    {
+        FILE *uf=fopen("test-usgs-void.dem","wb"); char a[1024],br[1024],tmp[64];
+        assert(uf!=NULL); memset(a,' ',sizeof(a));
+        memcpy(a+528,"     2",6);
+        snprintf(tmp,sizeof(tmp),"%12.6E",1.0); memcpy(a+816,tmp,12);
+        snprintf(tmp,sizeof(tmp),"%12.6E",1.0); memcpy(a+828,tmp,12);
+        snprintf(tmp,sizeof(tmp),"%12.6E",1.0); memcpy(a+840,tmp,12);
+        memcpy(a+852,"     1",6); memcpy(a+858,"     1",6);
+        assert(fwrite(a,1,sizeof(a),uf)==sizeof(a)); memset(br,' ',sizeof(br));
+        memcpy(br,"     1",6); memcpy(br+6,"     1",6); memcpy(br+12,"     1",6); memcpy(br+18,"     1",6);
+        snprintf(tmp,sizeof(tmp),"%24.15E",0.0); memcpy(br+24,tmp,24);
+        snprintf(tmp,sizeof(tmp),"%24.15E",0.0); memcpy(br+48,tmp,24);
+        snprintf(tmp,sizeof(tmp),"%24.15E",0.0); memcpy(br+72,tmp,24);
+        snprintf(tmp,sizeof(tmp),"%6d",-32767); memcpy(br+144,tmp,6);
+        assert(fwrite(br,1,sizeof(br),uf)==sizeof(br)); assert(fclose(uf)==0);
+        at_terrain_free(&b); assert(at_read_usgs_dem("test-usgs-void.dem",&b)==0);
+        assert(b.width==1 && b.height==1 && b.samples[0]==0);
+    }
+
     /* USGS UTM/NAD83 identity survives import -> ATF -> read. */
     {
         FILE *uf=fopen("test-usgs-utm.dem","wb"); char a[1024],br[1024],tmp[64]; ATTerrain rr={0}; unsigned int y;
