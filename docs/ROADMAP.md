@@ -51,6 +51,21 @@ Purpose: establish a small, deterministic, testable terrain engine before adding
 - low-memory tiled rendering
 - IFF/ILBM output
 
+## M2.5 — Classic landscape compatibility
+
+Preserve and interoperate with historically important landscape generators instead of treating them as image-only sources.
+
+- Vista / VistaPro native terrain and scene formats
+- Scenery Animator formats and workflows
+- World Construction Set formats where practical
+- other documented Amiga landscape formats as they are identified
+- preservation metadata in the Terrain IR
+- round-trip/native export where the original format can be reproduced safely
+- authentic profiles for palette, resolution, camera, lighting and terrain semantics
+- conversion of modern terrain back to original-platform-compatible data where representable
+
+The compatibility goal has two paths: preserve native source data for authentic/original workflows, and normalize a lossless-as-practical representation for modern processing.
+
 ## M3 — Real-world terrain
 
 - ASC
@@ -70,6 +85,20 @@ Purpose: establish a small, deterministic, testable terrain engine before adding
 - vegetation/ecosystems
 - rivers/watersheds
 
+## M3.5 — Modern terrain generators
+
+Modern open-source terrain workflows are first-class interoperability targets.
+
+- TerraForge3D interchange
+- Blender terrain workflows and open-source erosion extensions
+- Procedural Terrains-style heightmap/mesh workflows
+- Hydra-style hydraulic erosion workflows
+- generic 16-bit heightmap exchange
+- DEM/GIS to procedural terrain pipelines
+- deterministic import/export fixtures for supported interchange paths
+
+Prefer documented open formats and stable interchange (heightmaps, meshes and metadata) over coupling AmiTerrain to another application's internal implementation.
+
 ## M5 — Interchange
 
 - OBJ
@@ -79,6 +108,10 @@ Purpose: establish a small, deterministic, testable terrain engine before adding
 - LightWave
 - Imagine
 - AmiScene-SDK integration
+- GLTF/GLB
+- Blender interchange
+- AmiRender Terrain IR handoff
+- preservation metadata sidecars where target formats cannot carry source semantics
 
 ## M6 — Native application
 
@@ -88,7 +121,18 @@ Purpose: establish a small, deterministic, testable terrain engine before adding
 - ARexx port
 - presets
 
-## M7 — Distributed/high-performance rendering
+## M7 — AmiRender integration
+
+AmiTerrain owns terrain generation, terrain conversion, native landscape formats and Terrain IR semantics. AmiRender owns distributed rendering and modern render backends.
+
+- hand off Terrain IR/scenes to AmiRender
+- `original` path: invoke qualified original software/runtime where practical
+- `authentic` path: reproduce original landscape renderer constraints
+- `enhanced` path: modern POV-Ray/Blender rendering
+- preserve native terrain assets alongside normalized IR
+- never require destructive conversion to use the modern render farm
+
+## M8 — Distributed/high-performance rendering
 
 - worker protocol
 - tiled render jobs
