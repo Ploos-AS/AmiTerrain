@@ -192,6 +192,23 @@ The generic `.iff` suffix is not blindly auto-detected as ILBM because IFF is a 
 
 Status remains **Experimental** until qualified against a representative set of independently produced Amiga ILBM files and applications.
 
+### ILBM real-world qualification matrix
+
+Before promoting ILBM to **Verified**, collect redistributable sample files (or checksums and private qualification logs for copyrighted files) produced by independent Amiga software. Record application/version, machine or emulator, bitplane count, compression, masking, CAMG, CMAP, image dimensions, expected interpretation, and observed import/export result.
+
+| Source / case | Required qualification |
+| --- | --- |
+| Deluxe Paint / Personal Paint grayscale ILBM | Import pixel-index heights; check row alignment and CMAP independence |
+| ImageFX / ADPro or equivalent converted ILBM | Import independently encoded ByteRun1 and uncompressed variants |
+| VistaPro / WCS-generated IFF heightmap where available | Check that file is genuinely FORM ILBM; compare height orientation and levels |
+| Odd-width and multi-bitplane ILBM | Verify per-plane word padding and pixel reconstruction |
+| Masked ILBM | Verify transparency is display-only, not implicit void |
+| HAM / EHB display-mode ILBM | Reject as heightmap with clear error |
+| Malformed or truncated ILBM | Reject safely with no out-of-bounds reads |
+
+Qualification must not imply that arbitrary artwork ILBM is a valid terrain: pixel indices are treated as height levels, independently of palette colours. Preserve raw fixtures only when redistribution rights are clear; otherwise record file hash, metadata, reproduction steps, and test results without committing proprietary content.
+
+
 ## Regular XYZ grid — Experimental
 
 Priority: **P1**.
