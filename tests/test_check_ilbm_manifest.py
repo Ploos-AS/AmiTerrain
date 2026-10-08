@@ -38,5 +38,34 @@ class ManifestTests(unittest.TestCase):
                 module.validate(manifest, base)
 
 
+    def test_false_independent_claim(self):
+        with tempfile.TemporaryDirectory() as d:
+            base = pathlib.Path(d)
+            digest = "c" * 64
+            (base / "report.json").write_text(json.dumps({
+                "sha256": digest, "form": "ILBM", "qualified": True, "cli_exit": 0
+            }))
+            sample = {"id": "sample-1", "sha256": digest,
+                      "source_url": "https://example.invalid/sample.iff",
+                      "report": "report.json", "independent_comparison": False,
+                      "comparison_result": "pass"}
+            with self.assertRaisesRegex(ValueError, "cannot be claimed"):
+                module.validate({"samples": [sample]}, base)
+
+    def test_independent_comparison_requires_method(self):
+        with tempfile.TemporaryDirectory() as d:
+            base = pathlib.Path(d)
+            digest = "d" * 64
+            (base / "report.json").write_text(json.dumps({
+                "sha256": digest, "form": "ILBM", "qualified": True, "cli_exit": 0
+            }))
+            sample = {"id": "sample-1", "sha256": digest,
+                      "source_url": "https://example.invalid/sample.iff",
+                      "report": "report.json", "independent_comparison": True,
+                      "comparison_result": "pass"}
+            with self.assertRaisesRegex(ValueError, "independent comparison evidence"):
+                module.validate({"samples": [sample]}, base)
+
+
 if __name__ == "__main__":
     unittest.main()
