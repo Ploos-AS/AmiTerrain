@@ -192,6 +192,15 @@ The generic `.iff` suffix is not blindly auto-detected as ILBM because IFF is a 
 
 Status remains **Experimental** until qualified against a representative set of independently produced Amiga ILBM files and applications.
 
+### Candidate independent test sources (not yet qualified)
+
+- [mdoege/IFFshow](https://github.com/mdoege/IFFshow) — CC0/public-domain project with `demo_images/*.iff` and `stone_circle.lbm`; **verify the provenance/license of each image separately** before copying or redistributing. First inspect headers and run `tools/qualify_ilbm.py` on a locally obtained sample; artwork is not necessarily a heightmap.
+- [rvalles/amigagfxmangle](https://github.com/rvalles/amigagfxmangle) — MIT ILBM encoder/decoder, useful for independently generated files and ByteRun1/HAM comparisons.
+- [steffest/DPaint-js](https://github.com/steffest/DPaint-js) — MIT Amiga-oriented ILBM exporter, useful as an independent modern producer; do not equate this with qualification of original Deluxe Paint.
+- [svanderburg/libiff](https://github.com/svanderburg/libiff) — independent IFF container reference and specifications.
+
+No third-party binaries are vendored by default. An open-source repository license does not automatically establish rights to bundled artwork; document each fixture's individual provenance. Prefer producing a fresh original grayscale test image through an independently implemented exporter and retaining its SHA-256 and source recipe.
+
 ### ILBM real-world qualification matrix
 
 Before promoting ILBM to **Verified**, collect redistributable sample files (or checksums and private qualification logs for copyrighted files) produced by independent Amiga software. Record application/version, machine or emulator, bitplane count, compression, masking, CAMG, CMAP, image dimensions, expected interpretation, and observed import/export result.
