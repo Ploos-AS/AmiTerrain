@@ -13,6 +13,8 @@ jobs:
         run: make
       - name: Test
         run: make test
+      - name: Test pinned ILBM download verification
+        run: python3 -m unittest discover -s tests -p 'test_fetch_ilbm_candidate.py' -v
       - name: Test ILBM qualification manifest checker
         run: python3 -m unittest discover -s tests -p 'test_check_ilbm_manifest.py' -v
       - name: Check ILBM qualification manifest
