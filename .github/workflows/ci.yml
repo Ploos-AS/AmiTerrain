@@ -14,7 +14,7 @@ jobs:
       - name: Test
         run: make test
       - name: Test ILBM qualification inspector
-        run: python3 -m unittest discover -s tests -p 'test_qualify_ilbm.py' -v
+        run: python3 -m unittest discover -s tests -p 'test_qualify*ilbm.py' -v
       - name: Smoke test CLI and ATF
         run: |
           ./amiterrain generate 64 64 6502 terrain.pgm
