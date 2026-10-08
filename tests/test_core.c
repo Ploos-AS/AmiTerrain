@@ -586,6 +586,19 @@ int main(void)
         at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-rle-repeat-bound.iff",&b)!=0);
     }
 
+    /* A second BODY chunk must not override the first. */
+    {
+        static const unsigned char duplicate_body[] = {
+            'F','O','R','M',0,0,0,54,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1,
+            'B','O','D','Y',0,0,0,2, 0x80,0,
+            'B','O','D','Y',0,0,0,2, 0,0
+        };
+        FILE *xf=fopen("test-ilbm-duplicate-body.iff","wb"); assert(xf);
+        assert(fwrite(duplicate_body,1,sizeof(duplicate_body),xf)==sizeof(duplicate_body)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-duplicate-body.iff",&b)!=0);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
