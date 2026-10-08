@@ -21,7 +21,7 @@ class ManifestTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             base = pathlib.Path(d)
             digest = "a" * 64
-            (base / "report.json").write_text(json.dumps({"sha256": digest, "form": "ILBM", "qualified": True}))
+            (base / "report.json").write_text(json.dumps({"sha256": digest, "form": "ILBM", "qualified": True, "cli_exit": 0}))
             manifest = {"samples": [{"id": "sample-1", "sha256": digest,
                                      "source_url": "https://example.invalid/sample.iff",
                                      "report": "report.json"}]}
@@ -30,7 +30,7 @@ class ManifestTests(unittest.TestCase):
     def test_digest_mismatch(self):
         with tempfile.TemporaryDirectory() as d:
             base = pathlib.Path(d)
-            (base / "report.json").write_text(json.dumps({"sha256": "b" * 64, "form": "ILBM", "qualified": True}))
+            (base / "report.json").write_text(json.dumps({"sha256": "b" * 64, "form": "ILBM", "qualified": True, "cli_exit": 0}))
             manifest = {"samples": [{"id": "sample-1", "sha256": "a" * 64,
                                      "source_url": "https://example.invalid/sample.iff",
                                      "report": "report.json"}]}
