@@ -53,3 +53,5 @@ python3 tools/qualify_external_ilbm.py /tmp/amiga_lagoon.iff --cli ./amiterrain
 
 IFFshow's [`image_credits.txt`](https://github.com/mdoege/IFFshow/blob/master/image_credits.txt) attributes `amiga_lagoon.iff` to **Jim Sachs**, as a demo image for the **Brilliance** painting program. This identifies the credited artwork and association, **not** the specific ILBM-writing application/version, nor a license grant from the artist. Treat the image as third-party artwork: do not vendor or redistribute it without explicit permission. A successful decode would establish compatibility with this particular ILBM bitstream only, not blanket Brilliance export compatibility.
 
+
+GitHub's tree metadata identifies the candidate as Git blob [`713d45a6eee3d4d8e2ee9ed17cf8b120285d2363`](https://github.com/mdoege/IFFshow/blob/713d45a6eee3d4d8e2ee9ed17cf8b120285d2363/demo_images/amiga_lagoon.iff), size **484,242 bytes**. This is a **Git object SHA-1, not the sample's SHA-256**; do not substitute it for the digest required by the qualification manifest. Neither metadata nor artwork provenance establishes a passing import test.
