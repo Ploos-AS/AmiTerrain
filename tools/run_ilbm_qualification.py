@@ -34,6 +34,7 @@ def main():
     if result.stderr:
         print(result.stderr, file=sys.stderr)
     print(f"qualification report: {report}")
+    print("NOTE: CLI validation is not independent pixel comparison; do not add this sample to the qualified manifest without independent evidence.")
     return result.returncode
 
 
