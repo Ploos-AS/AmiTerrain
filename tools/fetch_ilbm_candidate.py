@@ -9,10 +9,6 @@ import json
 import pathlib
 import urllib.request
 
-URL = ("https://raw.githubusercontent.com/mdoege/IFFshow/"
-       "713d45a6eee3d4d8e2ee9ed17cf8b120285d2363/demo_images/amiga_lagoon.iff")
-# The URL above uses a blob hash as a ref; use the repository's master branch
-# for transport and verify the downloaded bytes against the pinned Git blob.
 URL = "https://raw.githubusercontent.com/mdoege/IFFshow/master/demo_images/amiga_lagoon.iff"
 EXPECTED_GIT_BLOB = "713d45a6eee3d4d8e2ee9ed17cf8b120285d2363"
 EXPECTED_SIZE = 484242
@@ -29,7 +25,7 @@ def main():
             data = response.read(EXPECTED_SIZE + 1)
     except OSError as exc:
         parser.error(f"download failed: {exc}")
-    blob_hash = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+    blob_hash = hashlib.sha1(b"blob " + str(len(data)).encode() + bytes([0]) + data).hexdigest()
     if len(data) != EXPECTED_SIZE or blob_hash != EXPECTED_GIT_BLOB:
         parser.error("download does not match pinned Git blob; refusing to write")
     args.output.parent.mkdir(parents=True, exist_ok=True)
