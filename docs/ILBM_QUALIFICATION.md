@@ -32,3 +32,19 @@ The public [IFFshow example directory](https://github.com/mdoege/IFFshow/tree/ma
 ### Failure handling
 
 A rejected file is still useful evidence: retain the JSON error report and minimal reproduction steps, then determine whether the file is malformed, an unsupported ILBM display mode, or a parser defect. Never silently classify an unsupported artwork format as valid terrain.
+
+## External sample acquisition (without vendoring)
+
+For the first candidate, inspect [IFFshow's `amiga_lagoon.iff`](https://github.com/mdoege/IFFshow/blob/master/demo_images/amiga_lagoon.iff). GitHub's text-only API cannot retrieve this binary through the current integration; this is an access limitation, **not** a qualification failure. The sample's creator and image redistribution rights remain unverified.
+
+On a networked workstation, download the file to a temporary directory outside the checkout, then run:
+
+```sh
+curl --fail --location --output /tmp/amiga_lagoon.iff \
+  https://raw.githubusercontent.com/mdoege/IFFshow/master/demo_images/amiga_lagoon.iff
+make
+python3 tools/qualify_ilbm.py /tmp/amiga_lagoon.iff
+python3 tools/qualify_external_ilbm.py /tmp/amiga_lagoon.iff --cli ./amiterrain
+```
+
+**Do not** add a manifest entry until the file has actually been downloaded, its SHA-256 recorded, the originating revision pinned, and the CLI report captured. Do not mark independent comparison as passing until another decoder has been used and pixel indices compared. An artwork image may be a valid ILBM without being a meaningful terrain heightmap.
