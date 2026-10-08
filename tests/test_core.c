@@ -625,6 +625,38 @@ int main(void)
         at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-duplicate-camg.iff",&b)!=0);
     }
 
+    /* BMHD and BODY are required; unknown optional chunks are tolerated. */
+    {
+        static const unsigned char no_bmhd[] = {
+            'F','O','R','M',0,0,0,14,'I','L','B','M',
+            'B','O','D','Y',0,0,0,2, 0x80,0
+        };
+        FILE *xf=fopen("test-ilbm-no-bmhd.iff","wb"); assert(xf);
+        assert(fwrite(no_bmhd,1,sizeof(no_bmhd),xf)==sizeof(no_bmhd)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-no-bmhd.iff",&b)!=0);
+    }
+    {
+        static const unsigned char no_body[] = {
+            'F','O','R','M',0,0,0,32,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1
+        };
+        FILE *xf=fopen("test-ilbm-no-body.iff","wb"); assert(xf);
+        assert(fwrite(no_body,1,sizeof(no_body),xf)==sizeof(no_body)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-no-body.iff",&b)!=0);
+    }
+    {
+        static const unsigned char optional[] = {
+            'F','O','R','M',0,0,0,54,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1,
+            'X','T','R','A',0,0,0,1, 42,0,
+            'B','O','D','Y',0,0,0,2, 0x80,0
+        };
+        FILE *xf=fopen("test-ilbm-optional.iff","wb"); assert(xf);
+        assert(fwrite(optional,1,sizeof(optional),xf)==sizeof(optional)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-optional.iff",&b)==0);
+        assert(b.width==1 && b.height==1 && b.samples[0]==65535);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
