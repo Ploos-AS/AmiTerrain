@@ -13,6 +13,8 @@ jobs:
         run: make
       - name: Test
         run: make test
+      - name: Test ILBM qualification manifest checker
+        run: python3 -m unittest discover -s tests -p 'test_check_ilbm_manifest.py' -v
       - name: Check ILBM qualification manifest
         run: python3 tools/check_ilbm_manifest.py qualification/ilbm/manifest.json
       - name: Test ILBM qualification inspector
