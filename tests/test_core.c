@@ -548,6 +548,19 @@ int main(void)
         at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-short-body.iff",&b)!=0);
     }
 
+    /* ByteRun1 literal must not consume bytes from the next IFF chunk. */
+    {
+        static const unsigned char short_rle[] = {
+            'F','O','R','M',0,0,0,48,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,1,0,0,0,10,10,0,1,0,1,
+            'B','O','D','Y',0,0,0,1, 1,0,
+            'J','U','N','K',0,0,0,0
+        };
+        FILE *xf=fopen("test-ilbm-rle-body-bound.iff","wb"); assert(xf);
+        assert(fwrite(short_rle,1,sizeof(short_rle),xf)==sizeof(short_rle)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-rle-body-bound.iff",&b)!=0);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
