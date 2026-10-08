@@ -38,7 +38,7 @@ int at_read_ilbm_heightmap(const char *path, ATTerrain *t){
         if(sz&1U){ if(fgetc(f)==EOF){ fclose(f); return -1; } }
         form_left-=sz+(sz&1U);
     }
-    if(form_left!=0 || !w||!hgt||planes<1||planes>8||mask>1||comp>1||body<0){ fclose(f); return -1; }
+    if(form_left!=0 || !have_bmhd || !w||!hgt||planes<1||planes>8||mask>1||comp>1||body<0){ fclose(f); return -1; }
     /* HAM (0x0800) and EHB (0x0080) encode display colour semantics, not a linear height index. */
     if(have_camg && (camg & (0x0800U|0x0080U))){ fclose(f); return -1; }
     rb=((size_t)w+15U)/16U*2U; plane_bytes=rb*((size_t)planes+(mask==1?1U:0U));
