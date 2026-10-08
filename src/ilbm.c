@@ -32,7 +32,7 @@ int at_read_ilbm_heightmap(const char *path, ATTerrain *t){
         } else if(!memcmp(ch,"CAMG",4)){
             unsigned char m[4]; if(sz<4||fread(m,1,4,f)!=4){ fclose(f); return -1; }
             camg=be32(m); have_camg=1; if(sz>4 && fseek(f,(long)(sz-4),SEEK_CUR)){ fclose(f); return -1; }
-        } else if(!memcmp(ch,"BODY",4)){ body=ftell(f); body_size=sz; if(fseek(f,(long)sz,SEEK_CUR)){ fclose(f); return -1; } }
+        } else if(!memcmp(ch,"BODY",4)){ if(body>=0){ fclose(f); return -1; } body=ftell(f); body_size=sz; if(fseek(f,(long)sz,SEEK_CUR)){ fclose(f); return -1; } }
         else if(fseek(f,(long)sz,SEEK_CUR)){ fclose(f); return -1; }
         if(sz&1U){ if(fgetc(f)==EOF){ fclose(f); return -1; } }
         form_left-=sz+(sz&1U);
