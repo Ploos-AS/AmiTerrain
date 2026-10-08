@@ -18,7 +18,7 @@ static int byterun1(FILE *f,unsigned char *dst,size_t n,size_t *remaining){
 }
 
 int at_read_ilbm_heightmap(const char *path, ATTerrain *t){
-    FILE *f; unsigned char h[12],ch[8],bmhd[20]; uint32_t form_left,sz; long body=-1; uint32_t body_size=0; uint16_t w=0,hgt=0; unsigned char planes=0,mask=0,comp=0; uint32_t camg=0; int have_camg=0; size_t rb,plane_bytes,body_remaining; unsigned char *row=0; uint32_t y,x,p;
+    FILE *f; unsigned char h[12],ch[8],bmhd[20]; uint32_t form_left,sz; long body=-1; uint32_t body_size=0; uint16_t w=0,hgt=0; unsigned char planes=0,mask=0,comp=0; uint32_t camg=0; int have_camg=0,have_bmhd=0; size_t rb,plane_bytes,body_remaining; unsigned char *row=0; uint32_t y,x,p;
     if(!path||!t) return -1; f=fopen(path,"rb"); if(!f) return -1;
     if(fread(h,1,12,f)!=12||memcmp(h,"FORM",4)||memcmp(h+8,"ILBM",4)){ fclose(f); return -1; }
     form_left=be32(h+4); if(form_left<4){ fclose(f); return -1; } form_left-=4;
@@ -26,11 +26,12 @@ int at_read_ilbm_heightmap(const char *path, ATTerrain *t){
         sz=be32(ch+4); form_left-=8;
         if(sz>form_left || (sz&1U)>(form_left-sz)){ fclose(f); return -1; }
         if(!memcmp(ch,"BMHD",4)){
+            if(have_bmhd){ fclose(f); return -1; } have_bmhd=1;
             if(sz<20||fread(bmhd,1,20,f)!=20){ fclose(f); return -1; }
             w=be16(bmhd); hgt=be16(bmhd+2); planes=bmhd[8]; mask=bmhd[9]; comp=bmhd[10];
             if(sz>20 && fseek(f,(long)(sz-20),SEEK_CUR)){ fclose(f); return -1; }
         } else if(!memcmp(ch,"CAMG",4)){
-            unsigned char m[4]; if(sz<4||fread(m,1,4,f)!=4){ fclose(f); return -1; }
+            unsigned char m[4]; if(have_camg){ fclose(f); return -1; } if(sz<4||fread(m,1,4,f)!=4){ fclose(f); return -1; }
             camg=be32(m); have_camg=1; if(sz>4 && fseek(f,(long)(sz-4),SEEK_CUR)){ fclose(f); return -1; }
         } else if(!memcmp(ch,"BODY",4)){ if(body>=0){ fclose(f); return -1; } body=ftell(f); body_size=sz; if(fseek(f,(long)sz,SEEK_CUR)){ fclose(f); return -1; } }
         else if(fseek(f,(long)sz,SEEK_CUR)){ fclose(f); return -1; }
