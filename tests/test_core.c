@@ -561,6 +561,31 @@ int main(void)
         at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-rle-body-bound.iff",&b)!=0);
     }
 
+    /* ByteRun1 -128 is a NOP; a following repeat fills one planar row. */
+    {
+        static const unsigned char nop_rle[] = {
+            'F','O','R','M',0,0,0,44,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,1,0,0,0,10,10,0,1,0,1,
+            'B','O','D','Y',0,0,0,4, 0x80,0xff,0x80,0
+        };
+        FILE *xf=fopen("test-ilbm-rle-nop.iff","wb"); assert(xf);
+        assert(fwrite(nop_rle,1,sizeof(nop_rle),xf)==sizeof(nop_rle)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-rle-nop.iff",&b)==0);
+        assert(b.width==1 && b.height==1 && b.samples[0]==65535);
+    }
+    /* A repeat opcode cannot fetch its value from the next chunk. */
+    {
+        static const unsigned char repeat_bound[] = {
+            'F','O','R','M',0,0,0,48,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,1,0,0,0,10,10,0,1,0,1,
+            'B','O','D','Y',0,0,0,1, 0xff,0,
+            'J','U','N','K',0,0,0,0
+        };
+        FILE *xf=fopen("test-ilbm-rle-repeat-bound.iff","wb"); assert(xf);
+        assert(fwrite(repeat_bound,1,sizeof(repeat_bound),xf)==sizeof(repeat_bound)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-rle-repeat-bound.iff",&b)!=0);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
