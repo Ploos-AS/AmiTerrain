@@ -55,3 +55,7 @@ IFFshow's [`image_credits.txt`](https://github.com/mdoege/IFFshow/blob/master/im
 
 
 GitHub's tree metadata identifies the candidate as Git blob [`713d45a6eee3d4d8e2ee9ed17cf8b120285d2363`](https://github.com/mdoege/IFFshow/blob/713d45a6eee3d4d8e2ee9ed17cf8b120285d2363/demo_images/amiga_lagoon.iff), size **484,242 bytes**. This is a **Git object SHA-1, not the sample's SHA-256**; do not substitute it for the digest required by the qualification manifest. Neither metadata nor artwork provenance establishes a passing import test.
+
+### Binary access limitation
+
+The GitHub connector's blob endpoint decodes fetched content as UTF-8. The candidate ILBM is binary, so attempting to read blob `713d45a6eee3d4d8e2ee9ed17cf8b120285d2363` produces a Unicode decode error. **Do not interpret this as an invalid ILBM file.** Qualification requires a byte-preserving download or a user-supplied sample; Git tree metadata alone cannot establish the sample's SHA-256, parseability, or decoded pixel indices.
