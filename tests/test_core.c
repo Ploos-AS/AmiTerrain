@@ -599,6 +599,32 @@ int main(void)
         at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-duplicate-body.iff",&b)!=0);
     }
 
+    /* Duplicate BMHD must be rejected rather than silently overriding dimensions. */
+    {
+        static const unsigned char duplicate_bmhd[] = {
+            'F','O','R','M',0,0,0,70,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1,
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1,
+            'B','O','D','Y',0,0,0,2, 0x80,0
+        };
+        FILE *xf=fopen("test-ilbm-duplicate-bmhd.iff","wb"); assert(xf);
+        assert(fwrite(duplicate_bmhd,1,sizeof(duplicate_bmhd),xf)==sizeof(duplicate_bmhd)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-duplicate-bmhd.iff",&b)!=0);
+    }
+    /* Duplicate CAMG must be rejected even when the two values agree. */
+    {
+        static const unsigned char duplicate_camg[] = {
+            'F','O','R','M',0,0,0,62,'I','L','B','M',
+            'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,0,0,0,0,10,10,0,1,0,1,
+            'C','A','M','G',0,0,0,4, 0,0,0,0,
+            'C','A','M','G',0,0,0,4, 0,0,0,0,
+            'B','O','D','Y',0,0,0,2, 0x80,0
+        };
+        FILE *xf=fopen("test-ilbm-duplicate-camg.iff","wb"); assert(xf);
+        assert(fwrite(duplicate_camg,1,sizeof(duplicate_camg),xf)==sizeof(duplicate_camg)); assert(fclose(xf)==0);
+        at_terrain_free(&b); assert(at_read_ilbm_heightmap("test-ilbm-duplicate-camg.iff",&b)!=0);
+    }
+
     puts("core tests: PASS");
     return 0;
 }
