@@ -43,9 +43,14 @@ def validate(manifest, base):
             raise ValueError(f"{ident}: invalid qualification report")
         if report["qualified"] is not True or report.get("cli_exit") != 0:
             raise ValueError(f"{ident}: report must contain successful CLI validation")
-        if sample.get("independent_comparison") is True:
-            if not sample.get("comparison_method") or not sample.get("comparison_result") == "pass":
+        comparison = sample.get("independent_comparison", False)
+        if not isinstance(comparison, bool):
+            raise ValueError(f"{ident}: independent_comparison must be boolean")
+        if comparison:
+            if not isinstance(sample.get("comparison_method"), str) or not sample["comparison_method"].strip() or sample.get("comparison_result") != "pass":
                 raise ValueError(f"{ident}: missing successful independent comparison evidence")
+        elif sample.get("comparison_result") == "pass":
+            raise ValueError(f"{ident}: comparison pass cannot be claimed without independent evidence")
     return len(samples)
 
 
