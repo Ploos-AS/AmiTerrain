@@ -48,3 +48,8 @@ python3 tools/qualify_external_ilbm.py /tmp/amiga_lagoon.iff --cli ./amiterrain
 ```
 
 **Do not** add a manifest entry until the file has actually been downloaded, its SHA-256 recorded, the originating revision pinned, and the CLI report captured. Do not mark independent comparison as passing until another decoder has been used and pixel indices compared. An artwork image may be a valid ILBM without being a meaningful terrain heightmap.
+
+### Provenance note: amiga_lagoon.iff
+
+IFFshow's [`image_credits.txt`](https://github.com/mdoege/IFFshow/blob/master/image_credits.txt) attributes `amiga_lagoon.iff` to **Jim Sachs**, as a demo image for the **Brilliance** painting program. This identifies the credited artwork and association, **not** the specific ILBM-writing application/version, nor a license grant from the artist. Treat the image as third-party artwork: do not vendor or redistribute it without explicit permission. A successful decode would establish compatibility with this particular ILBM bitstream only, not blanket Brilliance export compatibility.
+
