@@ -35,7 +35,7 @@ def decode(data):
     planes, masking, compression = bmhd[8], bmhd[9], bmhd[10]
     if not width or not height or not 1 <= planes <= 8:
         raise ValueError("unsupported geometry or planes")
-    if masking not in (0, 1, 2) or compression not in (0, 1):
+    if masking not in (0, 1) or compression not in (0, 1):
         raise ValueError("unsupported masking or compression")
     camg = chunks.get(b"CAMG", b"")
     if camg:
