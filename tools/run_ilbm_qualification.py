@@ -26,6 +26,8 @@ def main():
     download = subprocess.run([sys.executable, str(ROOT / "tools" / "fetch_ilbm_candidate.py"),
                                str(sample)], check=False)
     if download.returncode:
+        report.write_text('{"qualified": false, "stage": "download", "error": "pinned external sample download or integrity verification failed"}\\n', encoding="utf-8")
+        print(f"qualification report: {report}", file=sys.stderr)
         return download.returncode
     with report.open("x", encoding="utf-8") as out:
         result = subprocess.run([sys.executable, str(ROOT / "tools" / "qualify_external_ilbm.py"),
@@ -34,7 +36,7 @@ def main():
     if result.stderr:
         print(result.stderr, file=sys.stderr)
     print(f"qualification report: {report}")
-    print("NOTE: CLI validation is not independent pixel comparison; do not add this sample to the qualified manifest without independent evidence.")
+    print("NOTE: Python-to-C height comparison is performed; third-party provenance and rights still require review.")
     return result.returncode
 
 
