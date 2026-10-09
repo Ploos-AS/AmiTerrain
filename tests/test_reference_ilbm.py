@@ -9,7 +9,7 @@ spec.loader.exec_module(ref)
 
 
 def chunk(tag, data):
-    return tag + len(data).to_bytes(4, "big") + data + (b"\\0" if len(data) & 1 else b"")
+    return tag + len(data).to_bytes(4, "big") + data + (bytes([0]) if len(data) & 1 else b"")
 
 
 def sample(width=9, height=1, planes=2, masking=0, compression=0, body=None, camg=None):
