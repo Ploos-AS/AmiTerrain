@@ -14,6 +14,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from qualify_ilbm import inspect
 from reference_ilbm import decode
 import hashlib
+import tempfile
 
 
 def main():
@@ -50,8 +51,27 @@ def main():
     except (OSError, subprocess.TimeoutExpired) as exc:
         print(json.dumps({**metadata, **reference, "qualified": False, "error": str(exc)}))
         return 1
-    passed = result.returncode == 0
-    print(json.dumps({**metadata, **reference, "qualified": passed, "cli_exit": result.returncode,
+    comparison = {"heightmap_compared": False, "heightmap_matches_reference": False}
+    if result.returncode == 0:
+        try:
+            with tempfile.TemporaryDirectory(prefix="amiterrain-ilbm-") as temp:
+                raw_path = pathlib.Path(temp) / "decoded.raw"
+                converted = subprocess.run(
+                    [args.cli, "convert", str(args.sample), str(raw_path)],
+                    capture_output=True, text=True, timeout=30, check=False)
+                if converted.returncode == 0:
+                    actual = raw_path.read_bytes()
+                    comparison = {"heightmap_compared": True,
+                                  "heightmap_matches_reference": actual == expected_be16,
+                                  "heightmap_actual_be16_sha256": hashlib.sha256(actual).hexdigest(),
+                                  "heightmap_actual_byte_count": len(actual)}
+                else:
+                    comparison["heightmap_error"] = converted.stderr.strip()[:2048]
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            comparison["heightmap_error"] = str(exc)
+    passed = result.returncode == 0 and comparison["heightmap_matches_reference"]
+    print(json.dumps({**metadata, **reference, **comparison,
+                      "qualified": passed, "cli_exit": result.returncode,
                       "cli_stdout": result.stdout.strip()[:2048],
                       "cli_stderr": result.stderr.strip()[:2048]}, sort_keys=True))
     return 0 if passed else 1
