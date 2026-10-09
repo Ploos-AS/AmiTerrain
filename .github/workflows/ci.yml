@@ -13,6 +13,8 @@ jobs:
         run: make
       - name: Test
         run: make test
+      - name: Test independent ILBM reference decoder
+        run: python3 -m unittest discover -s tests -p 'test_reference_ilbm.py' -v
       - name: Test pinned ILBM download verification
         run: python3 -m unittest discover -s tests -p 'test_fetch_ilbm_candidate.py' -v
       - name: Test ILBM qualification manifest checker
