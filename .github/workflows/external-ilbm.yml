@@ -1,0 +1,27 @@
+name: External ILBM qualification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build native decoder
+        run: make
+      - name: Download and independently qualify external sample
+        run: |
+          python3 tools/run_ilbm_qualification.py "$RUNNER_TEMP/ilbm-qualification"
+      - name: Upload JSON evidence only (never the copyrighted image)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-ilbm-qualification-json
+          path: ${{ runner.temp }}/ilbm-qualification/*.json
+          if-no-files-found: warn
+          retention-days: 14
