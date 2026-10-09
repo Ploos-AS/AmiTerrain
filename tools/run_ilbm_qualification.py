@@ -2,9 +2,10 @@
 """Run the pinned external ILBM qualification workflow in one command.
 
 Example: python3 tools/run_ilbm_qualification.py /tmp/amiterrain-qualification
-Does not vendor the third-party artwork or claim independent pixel comparison.
+Does not vendor third-party artwork; qualification compares independent Python and native C decoded heights.
 """
 import argparse
+import json
 import pathlib
 import subprocess
 import sys
@@ -26,7 +27,9 @@ def main():
     download = subprocess.run([sys.executable, str(ROOT / "tools" / "fetch_ilbm_candidate.py"),
                                str(sample)], check=False)
     if download.returncode:
-        report.write_text('{"qualified": false, "stage": "download", "error": "pinned external sample download or integrity verification failed"}\\n', encoding="utf-8")
+        report.write_text(json.dumps({"qualified": False, "stage": "download",
+                                      "error": "pinned external sample download or integrity verification failed"}) + chr(10),
+                          encoding="utf-8")
         print(f"qualification report: {report}", file=sys.stderr)
         return download.returncode
     with report.open("x", encoding="utf-8") as out:
