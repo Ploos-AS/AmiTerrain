@@ -59,6 +59,27 @@ class QualificationTests(unittest.TestCase):
             self.assertFalse(report["heightmap_matches_reference"])
             self.assertEqual(report["heightmap_actual_byte_count"], 2)
 
+    def test_native_output_truncated_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            sample = root / "valid.iff"
+            sample.write_bytes(iff())
+            fake = root / "truncated-cli"
+            fake.write_text("#!/usr/bin/env python3\\n"
+                            "import pathlib, sys\\n"
+                            "if sys.argv[1] == 'validate': sys.exit(0)\\n"
+                            "if sys.argv[1] == 'convert':\\n"
+                            "    pathlib.Path(sys.argv[3]).write_bytes(bytes([0xff]))\\n"
+                            "    sys.exit(0)\\n"
+                            "sys.exit(1)\\n")
+            fake.chmod(0o755)
+            rc, report = self.run_qualification(sample, fake)
+            self.assertEqual(rc, 1)
+            self.assertFalse(report["qualified"])
+            self.assertTrue(report["heightmap_compared"])
+            self.assertFalse(report["heightmap_matches_reference"])
+            self.assertEqual(report["heightmap_actual_byte_count"], 1)
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
