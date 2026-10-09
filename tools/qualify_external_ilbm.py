@@ -12,6 +12,8 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from qualify_ilbm import inspect
+from reference_ilbm import decode
+import hashlib
 
 
 def main():
@@ -28,13 +30,23 @@ def main():
         print(json.dumps({**metadata, "qualified": False, "error": "not FORM ILBM"}))
         return 1
     try:
+        width, height, indices = decode(args.sample.read_bytes())
+        reference = {"reference_decoder": "python-planar-v1",
+                     "reference_width": width, "reference_height": height,
+                     "reference_pixel_indices_sha256": hashlib.sha256(indices).hexdigest(),
+                     "reference_pixel_count": len(indices)}
+    except (OSError, ValueError) as exc:
+        print(json.dumps({**metadata, "qualified": False,
+                          "error": f"reference decoder: {exc}"}, sort_keys=True))
+        return 1
+    try:
         result = subprocess.run([args.cli, "validate", str(args.sample)],
                                 capture_output=True, text=True, timeout=30, check=False)
     except (OSError, subprocess.TimeoutExpired) as exc:
-        print(json.dumps({**metadata, "qualified": False, "error": str(exc)}))
+        print(json.dumps({**metadata, **reference, "qualified": False, "error": str(exc)}))
         return 1
     passed = result.returncode == 0
-    print(json.dumps({**metadata, "qualified": passed, "cli_exit": result.returncode,
+    print(json.dumps({**metadata, **reference, "qualified": passed, "cli_exit": result.returncode,
                       "cli_stdout": result.stdout.strip()[:2048],
                       "cli_stderr": result.stderr.strip()[:2048]}, sort_keys=True))
     return 0 if passed else 1
