@@ -100,6 +100,23 @@ class QualificationTests(unittest.TestCase):
             self.assertFalse(report["heightmap_compared"])
             self.assertIn("native conversion failed", report["heightmap_error"])
 
+    def test_native_convert_success_without_output_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            sample = root / "valid.iff"
+            sample.write_bytes(iff())
+            fake = root / "silent-cli"
+            fake.write_text("#!/usr/bin/env python3\n"
+                            "import sys\n"
+                            "if sys.argv[1] in ('validate', 'convert'): sys.exit(0)\n"
+                            "sys.exit(1)\n")
+            fake.chmod(0o755)
+            rc, report = self.run_qualification(sample, fake)
+            self.assertEqual(rc, 1)
+            self.assertFalse(report["qualified"])
+            self.assertFalse(report["heightmap_compared"])
+            self.assertIn("heightmap_error", report)
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
