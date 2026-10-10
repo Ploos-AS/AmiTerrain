@@ -35,6 +35,7 @@ class QualificationTests(unittest.TestCase):
             rc, report = self.run_qualification(sample, cli)
             self.assertEqual(rc, 0, report)
             self.assertTrue(report["qualified"])
+            self.assertEqual(report["heightmap_status"], "matched")
             self.assertEqual(report["cli_exit"], 0)
             self.assertEqual(report["planes"], 1)
 
@@ -58,6 +59,7 @@ class QualificationTests(unittest.TestCase):
             self.assertTrue(report["heightmap_compared"])
             self.assertFalse(report["heightmap_matches_reference"])
             self.assertEqual(report["heightmap_actual_byte_count"], 2)
+            self.assertEqual(report["heightmap_status"], "mismatch")
 
     def test_native_output_truncated_rejected(self):
         with tempfile.TemporaryDirectory() as d:
@@ -79,6 +81,7 @@ class QualificationTests(unittest.TestCase):
             self.assertTrue(report["heightmap_compared"])
             self.assertFalse(report["heightmap_matches_reference"])
             self.assertEqual(report["heightmap_actual_byte_count"], 1)
+            self.assertEqual(report["heightmap_status"], "mismatch")
 
     def test_native_convert_failure_rejected(self):
         with tempfile.TemporaryDirectory() as d:
@@ -99,6 +102,7 @@ class QualificationTests(unittest.TestCase):
             self.assertFalse(report["qualified"])
             self.assertFalse(report["heightmap_compared"])
             self.assertIn("native conversion failed", report["heightmap_error"])
+            self.assertEqual(report["heightmap_status"], "conversion_failed")
 
     def test_native_convert_success_without_output_rejected(self):
         with tempfile.TemporaryDirectory() as d:
@@ -116,6 +120,7 @@ class QualificationTests(unittest.TestCase):
             self.assertFalse(report["qualified"])
             self.assertFalse(report["heightmap_compared"])
             self.assertIn("heightmap_error", report)
+            self.assertEqual(report["heightmap_status"], "output_unavailable")
 
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
