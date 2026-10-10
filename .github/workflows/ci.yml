@@ -23,6 +23,8 @@ jobs:
         run: python3 tools/check_ilbm_manifest.py qualification/ilbm/manifest.json
       - name: Test ILBM qualification inspector
         run: python3 -m unittest discover -s tests -p 'test_qualify*ilbm.py' -v
+      - name: Test external ILBM qualification runner
+        run: python3 -m unittest discover -s tests -p 'test_run_ilbm_qualification.py' -v
       - name: Smoke test CLI and ATF
         run: |
           ./amiterrain generate 64 64 6502 terrain.pgm
