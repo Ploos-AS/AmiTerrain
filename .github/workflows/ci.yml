@@ -65,6 +65,8 @@ jobs:
           ./amiterrain generate 17 9 123 terrain.ilbm
           ./amiterrain info terrain.ilbm
           ./amiterrain validate terrain.ilbm
+          python3 tools/qualify_external_ilbm.py terrain.ilbm --cli ./amiterrain > generated-ilbm-qualification.json
+          python3 -c 'import json; r=json.load(open("generated-ilbm-qualification.json")); assert r["qualified"] and r["heightmap_status"] == "matched" and r["heightmap_compared"]'
           ./amiterrain convert terrain.ilbm from-ilbm.atf
           ./amiterrain validate from-ilbm.atf
           cp terrain.ilbm terrain.iff
