@@ -51,7 +51,8 @@ def main():
     except (OSError, subprocess.TimeoutExpired) as exc:
         print(json.dumps({**metadata, **reference, "qualified": False, "error": str(exc)}))
         return 1
-    comparison = {"heightmap_compared": False, "heightmap_matches_reference": False}
+    comparison = {"heightmap_compared": False, "heightmap_matches_reference": False,
+                  "heightmap_status": "validation_failed" if result.returncode else "not_run"}
     if result.returncode == 0:
         try:
             with tempfile.TemporaryDirectory(prefix="amiterrain-ilbm-") as temp:
@@ -63,11 +64,14 @@ def main():
                     actual = raw_path.read_bytes()
                     comparison = {"heightmap_compared": True,
                                   "heightmap_matches_reference": actual == expected_be16,
+                                  "heightmap_status": "matched" if actual == expected_be16 else "mismatch",
                                   "heightmap_actual_be16_sha256": hashlib.sha256(actual).hexdigest(),
                                   "heightmap_actual_byte_count": len(actual)}
                 else:
+                    comparison["heightmap_status"] = "conversion_failed"
                     comparison["heightmap_error"] = converted.stderr.strip()[:2048]
         except (OSError, subprocess.TimeoutExpired) as exc:
+            comparison["heightmap_status"] = "output_unavailable" if isinstance(exc, FileNotFoundError) else "conversion_exception"
             comparison["heightmap_error"] = str(exc)
     passed = result.returncode == 0 and comparison["heightmap_matches_reference"]
     print(json.dumps({**metadata, **reference, **comparison,
