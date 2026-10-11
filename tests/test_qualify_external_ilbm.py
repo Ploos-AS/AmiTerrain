@@ -122,6 +122,25 @@ class QualificationTests(unittest.TestCase):
             self.assertIn("heightmap_error", report)
             self.assertEqual(report["heightmap_status"], "output_unavailable")
 
+    def test_byterun1_real_cli_matches_reference(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "compressed.iff"
+            raw = bytearray(iff())
+            # BODY consists of one 16-bit plane row. Encode two zero bytes as
+            # a ByteRun1 repeat, and enable compression in BMHD.
+            raw[28] = 1
+            raw[40:44] = (2).to_bytes(4, "big")
+            raw[44:] = bytes([0xff, 0])
+            raw[4:8] = (len(raw) - 8).to_bytes(4, "big")
+            sample.write_bytes(raw)
+            rc, report = self.run_qualification(sample, cli)
+            self.assertEqual(rc, 0, report)
+            self.assertTrue(report["qualified"])
+            self.assertEqual(report["heightmap_status"], "matched")
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
