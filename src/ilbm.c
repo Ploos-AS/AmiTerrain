@@ -53,7 +53,8 @@ int at_read_ilbm_heightmap(const char *path, ATTerrain *t){
             t->samples[(size_t)y*w+x]=(uint16_t)((v*65535U)/((1U<<planes)-1U));
         }
     }
-    if(ftell(f)<body || (unsigned long)(ftell(f)-body)>(unsigned long)body_size) goto fail;
+    /* Every BODY byte must be consumed: reject trailing ByteRun1 packets. */
+    if(body_remaining!=0 || ftell(f)<body || (unsigned long)(ftell(f)-body)>(unsigned long)body_size) goto fail;
     free(row); fclose(f); return 0;
 fail:
     at_terrain_free(t); free(row); fclose(f); return -1;
