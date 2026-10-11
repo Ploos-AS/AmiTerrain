@@ -141,6 +141,30 @@ class QualificationTests(unittest.TestCase):
             self.assertTrue(report["qualified"])
             self.assertEqual(report["heightmap_status"], "matched")
 
+    def test_byterun1_multiple_planes_and_rows(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "multi-plane.iff"
+            raw = bytearray(iff())
+            # Two rows, two planes, one 16-bit word per plane row.
+            raw[20:22] = (2).to_bytes(2, "big")
+            raw[28] = 2
+            raw[30] = 1
+            # Each plane row is independently encoded as two literal bytes.
+            encoded = bytes([1, 0x80, 0, 1, 0x40, 0,
+                             1, 0x20, 0, 1, 0x10, 0])
+            raw[44:48] = len(encoded).to_bytes(4, "big")
+            raw[48:] = encoded
+            raw[4:8] = (len(raw) - 8).to_bytes(4, "big")
+            sample.write_bytes(raw)
+            rc, report = self.run_qualification(sample, cli)
+            self.assertEqual(rc, 0, report)
+            self.assertTrue(report["qualified"])
+            self.assertEqual(report["reference_heightmap_sample_count"], 2)
+            self.assertEqual(report["heightmap_status"], "matched")
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
