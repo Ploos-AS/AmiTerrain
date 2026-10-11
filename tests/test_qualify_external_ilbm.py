@@ -131,9 +131,9 @@ class QualificationTests(unittest.TestCase):
             raw = bytearray(iff())
             # BODY consists of one 16-bit plane row. Encode two zero bytes as
             # a ByteRun1 repeat, and enable compression in BMHD.
-            raw[28] = 1
-            raw[40:44] = (2).to_bytes(4, "big")
-            raw[44:] = bytes([0xff, 0])
+            raw[30] = 1
+            raw[44:48] = (2).to_bytes(4, "big")
+            raw[48:] = bytes([0xff, 0])
             raw[4:8] = (len(raw) - 8).to_bytes(4, "big")
             sample.write_bytes(raw)
             rc, report = self.run_qualification(sample, cli)
