@@ -165,6 +165,23 @@ class QualificationTests(unittest.TestCase):
             self.assertEqual(report["reference_heightmap_sample_count"], 2)
             self.assertEqual(report["heightmap_status"], "matched")
 
+    def test_native_cli_rejects_cross_plane_byterun1_packet(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "cross-plane.iff"
+            raw = bytearray(iff())
+            raw[28] = 2  # two planes, two decoded bytes per plane
+            raw[30] = 1  # ByteRun1
+            raw[48:] = bytes([0xfd, 0])  # one packet expands to four bytes
+            raw[4:8] = (len(raw) - 8).to_bytes(4, "big")
+            sample.write_bytes(raw)
+            result = subprocess.run([str(cli), "validate", str(sample)],
+                                    capture_output=True, text=True, check=False)
+            self.assertNotEqual(result.returncode, 0,
+                                "native decoder accepted a cross-plane ByteRun1 packet")
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
