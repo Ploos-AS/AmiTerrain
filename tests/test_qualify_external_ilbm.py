@@ -182,6 +182,30 @@ class QualificationTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0,
                                 "native decoder accepted a cross-plane ByteRun1 packet")
 
+    def test_native_cli_rejects_malformed_byterun1_variants(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        variants = {
+            "truncated-literal": bytes([1, 0x80]),
+            "truncated-repeat": bytes([0xff]),
+            "trailing-packet": bytes([0xff, 0, 0x80]),
+        }
+        with tempfile.TemporaryDirectory() as d:
+            for name, body in variants.items():
+                with self.subTest(name=name):
+                    sample = pathlib.Path(d) / (name + ".iff")
+                    raw = bytearray(iff())
+                    raw[30] = 1  # ByteRun1
+                    raw[44:48] = len(body).to_bytes(4, "big")
+                    raw[48:] = body + (bytes([0]) if len(body) & 1 else b"")
+                    raw[4:8] = (len(raw) - 8).to_bytes(4, "big")
+                    sample.write_bytes(raw)
+                    result = subprocess.run([str(cli), "validate", str(sample)],
+                                            capture_output=True, text=True, check=False)
+                    self.assertNotEqual(result.returncode, 0,
+                                        "native decoder accepted " + name)
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
