@@ -149,7 +149,7 @@ class QualificationTests(unittest.TestCase):
             sample = pathlib.Path(d) / "multi-plane.iff"
             raw = bytearray(iff())
             # Two rows, two planes, one 16-bit word per plane row.
-            raw[20:22] = (2).to_bytes(2, "big")
+            raw[22:24] = (2).to_bytes(2, "big")
             raw[28] = 2
             raw[30] = 1
             # Each plane row is independently encoded as two literal bytes.
