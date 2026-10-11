@@ -52,24 +52,33 @@ def decode(data):
     else:
         raw = bytearray()
         i = 0
-        while i < len(source):
-            code = source[i]
-            i += 1
-            if code <= 127:
-                count = code + 1
-                if i + count > len(source):
-                    raise ValueError("truncated ByteRun1 literal")
-                raw.extend(source[i:i + count])
-                i += count
-            elif code >= 129:
-                if i == len(source):
-                    raise ValueError("truncated ByteRun1 repeat")
-                raw.extend(source[i:i + 1] * (257 - code))
+        # ByteRun1 packets may not cross an ILBM plane-row boundary.
+        for _ in range(height * (planes + (masking == 1))):
+            row = bytearray()
+            while len(row) < stride:
+                if i >= len(source):
+                    raise ValueError("truncated ByteRun1 plane row")
+                code = source[i]
                 i += 1
-            if len(raw) > expected:
-                raise ValueError("ByteRun1 overflow")
-        if len(raw) != expected:
-            raise ValueError("ByteRun1 decoded length mismatch")
+                if code <= 127:
+                    count = code + 1
+                    if i + count > len(source):
+                        raise ValueError("truncated ByteRun1 literal")
+                    if len(row) + count > stride:
+                        raise ValueError("ByteRun1 packet crosses plane-row boundary")
+                    row.extend(source[i:i + count])
+                    i += count
+                elif code >= 129:
+                    if i >= len(source):
+                        raise ValueError("truncated ByteRun1 repeat")
+                    count = 257 - code
+                    if len(row) + count > stride:
+                        raise ValueError("ByteRun1 packet crosses plane-row boundary")
+                    row.extend(source[i:i + 1] * count)
+                    i += 1
+            raw.extend(row)
+        if i != len(source):
+            raise ValueError("trailing ByteRun1 BODY bytes")
     pixels = bytearray(width * height)
     for y in range(height):
         base = y * row_bytes
