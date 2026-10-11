@@ -49,6 +49,20 @@ class ReferenceDecoderTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ref.decode(sample(compression=1, body=bytes([0x81, 0])))
 
+    def test_byterun1_packet_crosses_plane_row_rejected(self):
+        # Two planes, stride=2. One repeat packet expands to four bytes,
+        # enough for both planes but invalid across the plane-row boundary.
+        body = bytes([0xfd, 0])
+        with self.assertRaisesRegex(ValueError, "plane-row boundary"):
+            ref.decode(sample(compression=1, body=body))
+
+    def test_byterun1_trailing_packet_rejected(self):
+        # Each of two planes gets its own valid two-byte repeat; the final
+        # ByteRun1 no-op is extra BODY data and must not be accepted.
+        body = bytes([0xff, 0, 0xff, 0, 0x80])
+        with self.assertRaisesRegex(ValueError, "trailing"):
+            ref.decode(sample(compression=1, body=body))
+
     def test_ham_and_ehb_rejected(self):
         for mode in (0x800, 0x80):
             with self.subTest(mode=mode), self.assertRaises(ValueError):
