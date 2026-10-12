@@ -21,7 +21,12 @@ int at_read_ilbm_heightmap(const char *path, ATTerrain *t){
     FILE *f; unsigned char h[12],ch[8],bmhd[20]; uint32_t form_left,sz; long body=-1; uint32_t body_size=0; uint16_t w=0,hgt=0; unsigned char planes=0,mask=0,comp=0; uint32_t camg=0; int have_camg=0,have_bmhd=0; size_t rb,plane_bytes,body_remaining; unsigned char *row=0; uint32_t y,x,p;
     if(!path||!t) return -1; f=fopen(path,"rb"); if(!f) return -1;
     if(fread(h,1,12,f)!=12||memcmp(h,"FORM",4)||memcmp(h+8,"ILBM",4)){ fclose(f); return -1; }
-    form_left=be32(h+4); if(form_left<4){ fclose(f); return -1; } form_left-=4;
+    form_left=be32(h+4); if(form_left<4){ fclose(f); return -1; }
+    /* Reject truncated files and trailing bytes outside the declared FORM. */
+    { long file_size; if(fseek(f,0,SEEK_END)!=0 || (file_size=ftell(f))<0 ||
+          (unsigned long long)file_size!=(unsigned long long)form_left+8ULL ||
+          fseek(f,12,SEEK_SET)!=0){ fclose(f); return -1; } }
+    form_left-=4;
     while(form_left>=8 && fread(ch,1,8,f)==8){
         sz=be32(ch+4); form_left-=8;
         if(sz>form_left || (sz&1U)>(form_left-sz)){ fclose(f); return -1; }
