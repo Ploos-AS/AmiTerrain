@@ -226,6 +226,32 @@ class QualificationTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0,
                                         "native decoder accepted " + name)
 
+    def test_native_cli_rejects_noncanonical_chunk_sizes(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        base = iff()
+        def chunk(tag, payload):
+            return tag + len(payload).to_bytes(4, "big") + payload + (bytes([0]) if len(payload) & 1 else b"")
+        bmhd = base[20:40]
+        body = base[48:50]
+        variants = {
+            "bmhd-oversized": chunk(b"BMHD", bmhd + bytes([0, 0])) + chunk(b"BODY", body),
+            "bmhd-undersized": chunk(b"BMHD", bmhd[:-2]) + chunk(b"BODY", body),
+            "camg-oversized": chunk(b"BMHD", bmhd) + chunk(b"CAMG", bytes(6)) + chunk(b"BODY", body),
+            "camg-undersized": chunk(b"BMHD", bmhd) + chunk(b"CAMG", bytes(2)) + chunk(b"BODY", body),
+        }
+        with tempfile.TemporaryDirectory() as d:
+            for name, chunks in variants.items():
+                with self.subTest(name=name):
+                    payload = b"ILBM" + chunks
+                    sample = pathlib.Path(d) / (name + ".iff")
+                    sample.write_bytes(b"FORM" + len(payload).to_bytes(4, "big") + payload)
+                    result = subprocess.run([str(cli), "validate", str(sample)],
+                                            capture_output=True, text=True, check=False)
+                    self.assertNotEqual(result.returncode, 0,
+                                        "native decoder accepted " + name)
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
