@@ -566,7 +566,7 @@ int main(void)
         static const unsigned char nop_rle[] = {
             'F','O','R','M',0,0,0,44,'I','L','B','M',
             'B','M','H','D',0,0,0,20, 0,1,0,1,0,0,0,0,1,0,1,0,0,0,10,10,0,1,0,1,
-            'B','O','D','Y',0,0,0,4, 0x80,0xff,0x80,0
+            'B','O','D','Y',0,0,0,3, 0x80,0xff,0x80,0
         };
         FILE *xf=fopen("test-ilbm-rle-nop.iff","wb"); assert(xf);
         assert(fwrite(nop_rle,1,sizeof(nop_rle),xf)==sizeof(nop_rle)); assert(fclose(xf)==0);
