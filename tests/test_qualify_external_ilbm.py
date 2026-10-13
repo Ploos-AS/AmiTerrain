@@ -252,6 +252,22 @@ class QualificationTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0,
                                         "native decoder accepted " + name)
 
+    def test_native_cli_rejects_incomplete_chunk_header(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        valid = iff()
+        # A FORM with a complete image followed by a partial 4-byte chunk ID.
+        payload = valid[8:] + b"JUNK"
+        malformed = b"FORM" + len(payload).to_bytes(4, "big") + payload
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "partial-chunk.iff"
+            sample.write_bytes(malformed)
+            result = subprocess.run([str(cli), "validate", str(sample)],
+                                    capture_output=True, text=True, check=False)
+            self.assertNotEqual(result.returncode, 0,
+                                "native decoder accepted incomplete IFF chunk header")
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
