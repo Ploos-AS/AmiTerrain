@@ -268,6 +268,23 @@ class QualificationTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0,
                                 "native decoder accepted incomplete IFF chunk header")
 
+    def test_native_cli_accepts_unknown_padded_chunk(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        valid = iff()
+        # Unknown odd-sized chunks require one padding byte, which is not
+        # counted in the chunk payload length.
+        unknown = b"JUNK" + (3).to_bytes(4, "big") + b"abc" + bytes([0])
+        payload = valid[8:40] + unknown + valid[40:]
+        sample_bytes = b"FORM" + len(payload).to_bytes(4, "big") + payload
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "unknown-padded.iff"
+            sample.write_bytes(sample_bytes)
+            result = subprocess.run([str(cli), "validate", str(sample)],
+                                    capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
