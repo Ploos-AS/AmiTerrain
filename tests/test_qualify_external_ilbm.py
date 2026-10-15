@@ -360,6 +360,31 @@ class QualificationTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0,
                                         "native decoder accepted " + name)
 
+    def test_native_cli_rejects_invalid_bmhd_fields(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        # Offsets refer to BMHD payload within the canonical one-pixel fixture.
+        variants = {
+            "zero-width": (20, 0),
+            "zero-height": (22, 0),
+            "zero-planes": (28, 0),
+            "nine-planes": (28, 9),
+            "unsupported-mask": (29, 2),
+            "unsupported-compression": (30, 2),
+        }
+        with tempfile.TemporaryDirectory() as d:
+            for name, (offset, value) in variants.items():
+                with self.subTest(name=name):
+                    raw = bytearray(iff())
+                    raw[offset] = value
+                    sample = pathlib.Path(d) / (name + ".iff")
+                    sample.write_bytes(raw)
+                    result = subprocess.run([str(cli), "validate", str(sample)],
+                                            capture_output=True, text=True, check=False)
+                    self.assertNotEqual(result.returncode, 0,
+                                        "native decoder accepted " + name)
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
