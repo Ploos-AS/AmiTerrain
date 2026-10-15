@@ -366,8 +366,8 @@ class QualificationTests(unittest.TestCase):
             self.skipTest("build amiterrain first")
         # Offsets refer to BMHD payload within the canonical one-pixel fixture.
         variants = {
-            "zero-width": (20, 0),
-            "zero-height": (22, 0),
+            "zero-width": (21, 0),
+            "zero-height": (23, 0),
             "zero-planes": (28, 0),
             "nine-planes": (28, 9),
             "unsupported-mask": (29, 2),
