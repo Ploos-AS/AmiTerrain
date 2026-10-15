@@ -336,6 +336,30 @@ class QualificationTests(unittest.TestCase):
                                     capture_output=True, text=True, check=False)
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
 
+    def test_native_cli_rejects_missing_and_duplicate_chunks(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        valid = iff()
+        bmhd_chunk = valid[12:40]
+        body_chunk = valid[40:]
+        camg_chunk = b"CAMG" + (4).to_bytes(4, "big") + bytes(4)
+        variants = {
+            "missing-bmhd": body_chunk,
+            "missing-body": bmhd_chunk,
+            "duplicate-camg": bmhd_chunk + camg_chunk + camg_chunk + body_chunk,
+        }
+        with tempfile.TemporaryDirectory() as d:
+            for name, chunks in variants.items():
+                with self.subTest(name=name):
+                    payload = b"ILBM" + chunks
+                    sample = pathlib.Path(d) / (name + ".iff")
+                    sample.write_bytes(b"FORM" + len(payload).to_bytes(4, "big") + payload)
+                    result = subprocess.run([str(cli), "validate", str(sample)],
+                                            capture_output=True, text=True, check=False)
+                    self.assertNotEqual(result.returncode, 0,
+                                        "native decoder accepted " + name)
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
