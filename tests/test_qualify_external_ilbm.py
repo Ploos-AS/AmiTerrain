@@ -285,6 +285,21 @@ class QualificationTests(unittest.TestCase):
                                     capture_output=True, text=True, check=False)
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
 
+    def test_native_cli_accepts_body_before_bmhd(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        valid = iff()
+        bmhd_chunk = valid[12:40]
+        body_chunk = valid[40:]
+        payload = b"ILBM" + body_chunk + bmhd_chunk
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "body-first.iff"
+            sample.write_bytes(b"FORM" + len(payload).to_bytes(4, "big") + payload)
+            result = subprocess.run([str(cli), "validate", str(sample)],
+                                    capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
