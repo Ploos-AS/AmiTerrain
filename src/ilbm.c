@@ -49,6 +49,11 @@ int at_read_ilbm_heightmap(const char *path, ATTerrain *t){
     rb=((size_t)w+15U)/16U*2U; plane_bytes=rb*((size_t)planes+(mask==1?1U:0U));
     /* Reject impossible uncompressed payloads before allocating terrain data. */
     if(comp==0 && ((size_t)body_size != plane_bytes*(size_t)hgt)){ fclose(f); return -1; }
+    /* ByteRun1 worst case: literal runs of one byte plus a control byte,
+       and at most one extra no-op per encoded byte. This generous cap
+       catches pathological BODY sizes before allocating the heightmap. */
+    if(comp==1 && (unsigned long long)body_size >
+       2ULL*(unsigned long long)plane_bytes*(unsigned long long)hgt + 1024ULL){ fclose(f); return -1; }
     row=(unsigned char*)malloc(plane_bytes); if(!row){ fclose(f); return -1; }
     if(fseek(f,body,SEEK_SET)||at_terrain_init(t,w,hgt)){ free(row); fclose(f); return -1; }
     body_remaining=body_size;
