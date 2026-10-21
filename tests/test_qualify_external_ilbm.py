@@ -408,6 +408,29 @@ class QualificationTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0,
                                         "native decoder accepted " + name)
 
+    def test_native_cli_rejects_byterun1_below_minimum_size(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        valid = iff()
+        bmhd = bytearray(valid[20:40])
+        bmhd[1] = 2  # width = 2
+        bmhd[3] = 2  # height = 2
+        bmhd[8] = 2  # two bitplanes
+        bmhd[10] = 1  # ByteRun1 compression
+        # Four plane rows require at least eight encoded bytes.
+        body = bytes([0, 0, 0, 0, 0, 0])
+        chunks = (b"BMHD" + (20).to_bytes(4, "big") + bmhd +
+                  b"BODY" + len(body).to_bytes(4, "big") + body)
+        payload = b"ILBM" + chunks
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "byterun1-too-short.iff"
+            sample.write_bytes(b"FORM" + len(payload).to_bytes(4, "big") + payload)
+            result = subprocess.run([str(cli), "validate", str(sample)],
+                                    capture_output=True, text=True, check=False)
+            self.assertNotEqual(result.returncode, 0,
+                                "native decoder accepted undersized ByteRun1 BODY")
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
