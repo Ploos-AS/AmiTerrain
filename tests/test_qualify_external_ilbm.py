@@ -385,6 +385,29 @@ class QualificationTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0,
                                         "native decoder accepted " + name)
 
+    def test_native_cli_rejects_uncompressed_body_size_mismatch(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        valid = iff()
+        bmhd = valid[12:40]
+        variants = {
+            "empty-body": b"",
+            "oversized-body": bytes([0x80, 0, 0, 0]),
+        }
+        with tempfile.TemporaryDirectory() as d:
+            for name, body in variants.items():
+                with self.subTest(name=name):
+                    body_chunk = (b"BODY" + len(body).to_bytes(4, "big") +
+                                  body + (bytes([0]) if len(body) & 1 else b""))
+                    payload = b"ILBM" + bmhd + body_chunk
+                    sample = pathlib.Path(d) / (name + ".iff")
+                    sample.write_bytes(b"FORM" + len(payload).to_bytes(4, "big") + payload)
+                    result = subprocess.run([str(cli), "validate", str(sample)],
+                                            capture_output=True, text=True, check=False)
+                    self.assertNotEqual(result.returncode, 0,
+                                        "native decoder accepted " + name)
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
