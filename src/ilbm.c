@@ -47,6 +47,8 @@ int at_read_ilbm_heightmap(const char *path, ATTerrain *t){
     /* HAM (0x0800) and EHB (0x0080) encode display colour semantics, not a linear height index. */
     if(have_camg && (camg & (0x0800U|0x0080U))){ fclose(f); return -1; }
     rb=((size_t)w+15U)/16U*2U; plane_bytes=rb*((size_t)planes+(mask==1?1U:0U));
+    /* Reject impossible uncompressed payloads before allocating terrain data. */
+    if(comp==0 && ((size_t)body_size != plane_bytes*(size_t)hgt)){ fclose(f); return -1; }
     row=(unsigned char*)malloc(plane_bytes); if(!row){ fclose(f); return -1; }
     if(fseek(f,body,SEEK_SET)||at_terrain_init(t,w,hgt)){ free(row); fclose(f); return -1; }
     body_remaining=body_size;
