@@ -189,7 +189,7 @@ class QualificationTests(unittest.TestCase):
         variants = {
             "truncated-literal": bytes([1, 0x80]),
             "truncated-repeat": bytes([0xff]),
-            "trailing-packet": bytes([0xff, 0, 0x80]),
+            "trailing-packet": bytes([0xff, 0, 0x00]),
         }
         with tempfile.TemporaryDirectory() as d:
             for name, body in variants.items():
