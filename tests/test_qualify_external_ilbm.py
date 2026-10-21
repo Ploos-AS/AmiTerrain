@@ -431,6 +431,25 @@ class QualificationTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0,
                                 "native decoder accepted undersized ByteRun1 BODY")
 
+    def test_native_cli_accepts_byterun1_nops(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        valid = iff()
+        bmhd = bytearray(valid[20:40])
+        bmhd[10] = 1  # ByteRun1 compression
+        # One 16-bit row: NOP, literal two bytes, NOP.
+        body = bytes([0x80, 0x01, 0x80, 0x00, 0x80])
+        body_chunk = (b"BODY" + len(body).to_bytes(4, "big") +
+                      body + bytes([0]))  # IFF pad is outside BODY length
+        payload = b"ILBM" + valid[12:20] + bmhd + body_chunk
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "byterun1-nops.iff"
+            sample.write_bytes(b"FORM" + len(payload).to_bytes(4, "big") + payload)
+            result = subprocess.run([str(cli), "validate", str(sample)],
+                                    capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
