@@ -453,6 +453,30 @@ class QualificationTests(unittest.TestCase):
             width, height, pixels = decode(sample.read_bytes())
             self.assertEqual((width, height, pixels), (1, 1, bytes([1])))
 
+    def test_native_and_reference_match_multiplane_multirow_nops(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        from tools.reference_ilbm import decode
+        bmhd = bytearray(iff()[20:40])
+        bmhd[3] = 2
+        bmhd[8] = 2
+        bmhd[10] = 1
+        body = bytes([0x80, 0xff, 0x80,
+                      0x80, 0xff, 0x00,
+                      0x80, 0xff, 0x00,
+                      0x80, 0xff, 0x80, 0x80])
+        payload = (b"ILBM" + b"BMHD" + (20).to_bytes(4, "big") + bmhd +
+                   b"BODY" + len(body).to_bytes(4, "big") + body + bytes([0]))
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "multiplane-nops.iff"
+            sample.write_bytes(b"FORM" + len(payload).to_bytes(4, "big") + payload)
+            self.assertEqual(decode(sample.read_bytes()), (1, 2, bytes([1, 2])))
+            rc, report = self.run_qualification(sample, cli)
+            self.assertEqual(rc, 0, report)
+            self.assertTrue(report["qualified"])
+            self.assertEqual(report["heightmap_status"], "matched")
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
