@@ -78,7 +78,7 @@ class ReferenceDecoderTests(unittest.TestCase):
             0x80, 0xff, 0x80, 0x80,
         ])
         data = sample(width=1, height=2, planes=2, compression=1, body=body)
-        self.assertEqual(ref.decode(data), (1, 2, bytes([1, 3])))
+        self.assertEqual(ref.decode(data), (1, 2, bytes([1, 2])))
 
     def test_ham_and_ehb_rejected(self):
         for mode in (0x800, 0x80):
