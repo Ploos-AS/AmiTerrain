@@ -524,6 +524,29 @@ class QualificationTests(unittest.TestCase):
             self.assertTrue(report["qualified"])
             self.assertEqual(report["heightmap_status"], "matched")
 
+    def test_native_and_reference_match_multirow_mask_patterns(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        from tools.reference_ilbm import decode
+        bmhd = bytearray(iff()[20:40])
+        bmhd[3] = 2
+        bmhd[9] = 1
+        bmhd[10] = 1
+        # Image indices 1,0; mask bits 0,1. Each plane row is separate.
+        body = bytes([0xff, 0x80, 0xff, 0x00,
+                      0xff, 0x00, 0xff, 0x80])
+        payload = (b"ILBM" + b"BMHD" + (20).to_bytes(4, "big") + bmhd +
+                   b"BODY" + len(body).to_bytes(4, "big") + body)
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "byterun1-multirow-mask.iff"
+            sample.write_bytes(b"FORM" + len(payload).to_bytes(4, "big") + payload)
+            self.assertEqual(decode(sample.read_bytes()), (1, 2, bytes([1, 0])))
+            rc, report = self.run_qualification(sample, cli)
+            self.assertEqual(rc, 0, report)
+            self.assertTrue(report["qualified"])
+            self.assertEqual(report["heightmap_status"], "matched")
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
