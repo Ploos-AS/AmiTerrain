@@ -68,6 +68,18 @@ class ReferenceDecoderTests(unittest.TestCase):
         self.assertEqual(ref.decode(sample(compression=1, body=body)),
                          (9, 1, bytes(9)))
 
+    def test_byterun1_mixed_literals_repeats_and_nops(self):
+        # Four plane rows, each decoding to two bytes. Exercise NOPs
+        # before and between packet types, including trailing NOPs.
+        body = bytes([
+            0x80, 0x01, 0x80, 0x00,
+            0x80, 0xff, 0x00,
+            0x00, 0x40, 0x00, 0x00,
+            0x80, 0xff, 0x80, 0x80,
+        ])
+        data = sample(width=1, height=2, planes=2, compression=1, body=body)
+        self.assertEqual(ref.decode(data), (1, 2, bytes([1, 3])))
+
     def test_ham_and_ehb_rejected(self):
         for mode in (0x800, 0x80):
             with self.subTest(mode=mode), self.assertRaises(ValueError):
