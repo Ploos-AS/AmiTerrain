@@ -77,7 +77,7 @@ def decode(data):
                     row.extend(source[i:i + 1] * count)
                     i += 1
             raw.extend(row)
-        if i != len(source):
+        if any(code != 0x80 for code in source[i:]):
             raise ValueError("trailing ByteRun1 BODY bytes")
     pixels = bytearray(width * height)
     for y in range(height):
