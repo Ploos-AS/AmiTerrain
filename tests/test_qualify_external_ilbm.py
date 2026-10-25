@@ -449,6 +449,9 @@ class QualificationTests(unittest.TestCase):
             result = subprocess.run([str(cli), "validate", str(sample)],
                                     capture_output=True, text=True, check=False)
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            from tools.reference_ilbm import decode
+            width, height, pixels = decode(sample.read_bytes())
+            self.assertEqual((width, height, pixels), (1, 1, bytes([1])))
 
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
