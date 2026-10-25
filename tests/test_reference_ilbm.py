@@ -57,11 +57,16 @@ class ReferenceDecoderTests(unittest.TestCase):
             ref.decode(sample(compression=1, body=body))
 
     def test_byterun1_trailing_packet_rejected(self):
-        # Each of two planes gets its own valid two-byte repeat; the final
-        # ByteRun1 no-op is extra BODY data and must not be accepted.
-        body = bytes([0xff, 0, 0xff, 0, 0x80])
+        # Each plane gets a valid repeat; a trailing non-NOP opcode is invalid.
+        body = bytes([0xff, 0, 0xff, 0, 0x00])
         with self.assertRaisesRegex(ValueError, "trailing"):
             ref.decode(sample(compression=1, body=body))
+
+    def test_byterun1_trailing_nops_accepted(self):
+        # NOPs may appear between packets and after the final plane row.
+        body = bytes([0x80, 0xff, 0, 0x80, 0xff, 0, 0x80, 0x80])
+        self.assertEqual(ref.decode(sample(compression=1, body=body)),
+                         (9, 1, bytes(9)))
 
     def test_ham_and_ehb_rejected(self):
         for mode in (0x800, 0x80):
