@@ -634,6 +634,29 @@ class QualificationTests(unittest.TestCase):
             self.assertTrue(report["qualified"])
             self.assertEqual(report["heightmap_status"], "matched")
 
+    def test_byterun1_packet_cannot_cross_aligned_plane_row(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        from tools.reference_ilbm import decode
+        bmhd = bytearray(iff()[20:40])
+        bmhd[1] = 17
+        bmhd[8] = 2
+        bmhd[10] = 1
+        # Each aligned plane row is four bytes. This repeat packet
+        # requests five bytes and must not spill into the next plane.
+        body = bytes([0xfc, 0x80, 0x02, 0x00, 0x00, 0x00])
+        payload = (b"ILBM" + b"BMHD" + (20).to_bytes(4, "big") + bmhd +
+                   b"BODY" + len(body).to_bytes(4, "big") + body)
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "byterun1-cross-plane.iff"
+            sample.write_bytes(b"FORM" + len(payload).to_bytes(4, "big") + payload)
+            with self.assertRaises(ValueError):
+                decode(sample.read_bytes())
+            native = subprocess.run([str(cli), "validate", str(sample)],
+                                    capture_output=True, text=True, check=False)
+            self.assertNotEqual(native.returncode, 0)
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
