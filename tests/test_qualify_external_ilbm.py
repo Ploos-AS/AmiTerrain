@@ -597,6 +597,43 @@ class QualificationTests(unittest.TestCase):
             self.assertTrue(report["qualified"])
             self.assertEqual(report["heightmap_status"], "matched")
 
+    def test_native_and_reference_match_multirow_multiplane_alignment(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        from tools.reference_ilbm import decode
+        bmhd = bytearray(iff()[20:40])
+        bmhd[1] = 17
+        bmhd[3] = 2
+        bmhd[8] = 2
+        bmhd[9] = 1
+        bmhd[10] = 1
+        # Plane rows are interleaved: row 0 (plane 0, plane 1, mask),
+        # then row 1 in the same order. Each decodes to four bytes.
+        plane_rows = [
+            bytes([0x80, 0x00, 0x80, 0x00]),  # row 0, bit 0 at x=0,16
+            bytes([0x00, 0x80, 0x00, 0x00]),  # row 0, bit 1 at x=8
+            bytes([0xff, 0x00, 0x00, 0x00]),  # row 0, mask
+            bytes([0x00, 0x80, 0x00, 0x00]),  # row 1, bit 0 at x=8
+            bytes([0x80, 0x00, 0x80, 0x00]),  # row 1, bit 1 at x=0,16
+            bytes([0x00, 0x00, 0x00, 0x00]),  # row 1, mask
+        ]
+        body = b"".join(bytes([0x03]) + row for row in plane_rows)
+        payload = (b"ILBM" + b"BMHD" + (20).to_bytes(4, "big") + bmhd +
+                   b"BODY" + len(body).to_bytes(4, "big") + body)
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "byterun1-multiplane-aligned.iff"
+            sample.write_bytes(b"FORM" + len(payload).to_bytes(4, "big") + payload)
+            row0 = bytes(1 if i in (0, 16) else 2 if i == 8 else 0
+                         for i in range(17))
+            row1 = bytes(2 if i in (0, 16) else 1 if i == 8 else 0
+                         for i in range(17))
+            self.assertEqual(decode(sample.read_bytes()), (17, 2, row0 + row1))
+            rc, report = self.run_qualification(sample, cli)
+            self.assertEqual(rc, 0, report)
+            self.assertTrue(report["qualified"])
+            self.assertEqual(report["heightmap_status"], "matched")
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
