@@ -547,6 +547,31 @@ class QualificationTests(unittest.TestCase):
             self.assertTrue(report["qualified"])
             self.assertEqual(report["heightmap_status"], "matched")
 
+    def test_native_and_reference_match_byte_boundary_with_mask(self):
+        cli = ROOT / "amiterrain"
+        if not cli.is_file():
+            self.skipTest("build amiterrain first")
+        from tools.reference_ilbm import decode
+        bmhd = bytearray(iff()[20:40])
+        bmhd[1] = 9   # width crosses the first byte boundary
+        bmhd[9] = 1   # separate mask plane
+        bmhd[10] = 1  # ByteRun1
+        # Image bits: pixel 0 and pixel 8 set. Mask bits differ.
+        # Literal packets each decode a two-byte plane row.
+        body = bytes([0x01, 0x80, 0x80,
+                      0x80, 0x01, 0x7f, 0x00])
+        payload = (b"ILBM" + b"BMHD" + (20).to_bytes(4, "big") + bmhd +
+                   b"BODY" + len(body).to_bytes(4, "big") + body + bytes([0]))
+        with tempfile.TemporaryDirectory() as d:
+            sample = pathlib.Path(d) / "byterun1-byte-boundary-mask.iff"
+            sample.write_bytes(b"FORM" + len(payload).to_bytes(4, "big") + payload)
+            self.assertEqual(decode(sample.read_bytes()),
+                             (9, 1, bytes([1, 0, 0, 0, 0, 0, 0, 0, 1])))
+            rc, report = self.run_qualification(sample, cli)
+            self.assertEqual(rc, 0, report)
+            self.assertTrue(report["qualified"])
+            self.assertEqual(report["heightmap_status"], "matched")
+
     def test_wrong_form_rejected_before_cli(self):
         with tempfile.TemporaryDirectory() as d:
             sample = pathlib.Path(d) / "wrong.iff"
